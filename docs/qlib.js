@@ -24,19 +24,37 @@
 
   /* ----------------------------- gates ------------------------------- */
   const gates = {
+    I: [[C(1), C(0)], [C(0), C(1)]],
     H: [[C(R2), C(R2)], [C(R2), C(-R2)]],
     X: [[C(0), C(1)], [C(1), C(0)]],
     Y: [[C(0), C(0, -1)], [C(0, 1), C(0)]],
     Z: [[C(1), C(0)], [C(0), C(-1)]],
     S: [[C(1), C(0)], [C(0), C(0, 1)]],
+    Sdg: [[C(1), C(0)], [C(0), C(0, -1)]],
     T: [[C(1), C(0)], [C(0), C(Math.cos(Math.PI / 4), Math.sin(Math.PI / 4))]],
+    Tdg: [[C(1), C(0)], [C(0), C(Math.cos(Math.PI / 4), -Math.sin(Math.PI / 4))]],
     SX: [[C(0.5, 0.5), C(0.5, -0.5)], [C(0.5, -0.5), C(0.5, 0.5)]],
+    SXdg: [[C(0.5, -0.5), C(0.5, 0.5)], [C(0.5, 0.5), C(0.5, -0.5)]],
   };
   function rotGate(axis, th) {
     const c = Math.cos(th / 2), s = Math.sin(th / 2);
     if (axis === 'X') return [[C(c), C(0, -s)], [C(0, -s), C(c)]];
     if (axis === 'Y') return [[C(c), C(-s)], [C(s), C(c)]];
     return [[C(c, -s), C(0)], [C(0), C(c, s)]]; // Rz
+  }
+  const pGate = lam => [[C(1), C(0)], [C(0), C(Math.cos(lam), Math.sin(lam))]];   // phase P(λ) = diag(1, e^{iλ})
+  function uGate(th, ph, lam) {                                                    // IBM U(θ,φ,λ)
+    const c = Math.cos(th / 2), s = Math.sin(th / 2);
+    return [[C(c, 0), C(-s * Math.cos(lam), -s * Math.sin(lam))],
+            [C(s * Math.cos(ph), s * Math.sin(ph)), C(c * Math.cos(ph + lam), c * Math.sin(ph + lam))]];
+  }
+  function rxxGate(th) {                                                           // exp(−iθ/2 X⊗X)
+    const c = Math.cos(th / 2), s = Math.sin(th / 2);
+    return [[C(c), C(0), C(0), C(0, -s)], [C(0), C(c), C(0, -s), C(0)], [C(0), C(0, -s), C(c), C(0)], [C(0, -s), C(0), C(0), C(c)]];
+  }
+  function rzzGate(th) {                                                           // exp(−iθ/2 Z⊗Z) = diag(e∓, e±, e±, e∓)
+    const c = Math.cos(th / 2), s = Math.sin(th / 2);
+    return [[C(c, -s), C(0), C(0), C(0)], [C(0), C(c, s), C(0), C(0)], [C(0), C(0), C(c, s), C(0)], [C(0), C(0), C(0), C(c, -s)]];
   }
   const PAULI = { x: gates.X, y: gates.Y, z: gates.Z };
 
@@ -81,6 +99,14 @@
     for (let i = 0; i < state.length; i++) {
       const ai = (i & am) ? 1 : 0, bi = (i & bm) ? 1 : 0;
       if (ai !== bi) out[(i & ~am & ~bm) | (ai ? bm : 0) | (bi ? am : 0)] = state[i];
+    }
+    return out;
+  }
+  function applyU2(state, n, qi, qj, M) {          // apply a 4×4 gate (basis qi,qj = 00,01,10,11)
+    const mi = 1 << (n - 1 - qi), mj = 1 << (n - 1 - qj), out = state.slice();
+    for (let i = 0; i < state.length; i++) if (!(i & mi) && !(i & mj)) {
+      const idx = [i, i | mj, i | mi, i | mi | mj], a = idx.map(k => state[k]);
+      for (let r = 0; r < 4; r++) { let su = C(0); for (let c = 0; c < 4; c++) su = cadd(su, cmul(M[r][c], a[c])); out[idx[r]] = su; }
     }
     return out;
   }
@@ -314,8 +340,8 @@
 
   g.Q = {
     C, cadd, csub, cmul, cconj, cabs2, R2, z, fmtC,
-    gates, rotGate, PAULI, axisAngle,
-    normalize, applyU, cnot, cz, swap, expect, bloch, density1, corrTensor, concurrence, tangle3,
+    gates, rotGate, pGate, uGate, rxxGate, rzzGate, PAULI, axisAngle,
+    normalize, applyU, applyU2, cnot, cz, swap, expect, bloch, density1, corrTensor, concurrence, tangle3,
     initThree, toThree, perp, V3: (x, y, z) => new THREE.Vector3(x, y, z),
     makeLabel, makeDynText, axisLine, setupScene, attachResize, startLoop,
     makeBlochSphere, makeCouplingSphere, makeGatePreview, rotationToward, makeAnimator, makeReplay,

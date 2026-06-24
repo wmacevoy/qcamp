@@ -119,13 +119,17 @@ What it shows:
 
 - **Presets (8):** the four basis states `|00⟩ |01⟩ |10⟩ |11⟩` and the four Bell
   states `Φ⁺ Φ⁻ Ψ⁺ Ψ⁻`. A preset starts a fresh run.
-- **Single-qubit gates** (`H X Y Z S T √X` and `Rx/Ry/Rz` with an angle slider)
-  applied to the selected target qubit (A or B). **Hovering** a gate previews its
-  rotation on the active sphere — the axis line, a **washer** where the axis
-  pierces the sphere (with a mini direction/angle dial), a sweep arc with a
-  terminus arrowhead, and the turn angle. **Applying** it animates the Bloch arrow
-  rotating about that axis. (Same on the 1-qubit page.)
-- **Two-qubit gates:** `CNOT A→B`, `CNOT B→A`, `CZ`, `SWAP`.
+- **Single-qubit gates** — the IBM Quantum Composer set: `I H X Y Z`, `S S† T T†
+  √X √X†`, `Rx/Ry/Rz/P(θ)` (angle slider), and `U(θ,φ,λ)` (three inputs) — applied
+  to the selected target qubit (A or B). **Hovering** a gate previews its rotation
+  on the active sphere — the axis line, a **washer** where the axis pierces the
+  sphere (with a mini direction/angle dial), a sweep arc with a terminus arrowhead,
+  and the turn angle. **Applying** it animates the Bloch arrow rotating about that
+  axis. (Same on the 1-qubit page.)
+- **Two-qubit gates:** `CNOT A→B`, `CNOT B→A`, `CZ`, `SWAP`, and the tunable
+  entanglers `Rxx(θ)`, `Rzz(θ)` (angle slider).
+- **Gate dictionary** (collapsible) explains what each gate does in terms of the
+  Bloch arrows and coupling sphere.
 - **Gate log & replay:** every gate records onto the current preset. Step
   through the run with **⏮ reset · ◀ back · ▶ forward · ⏭ to latest**, or click
   any step chip to jump there. Applying a gate from a mid-replay point replaces

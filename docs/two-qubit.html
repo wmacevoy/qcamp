@@ -88,13 +88,19 @@
       <button class="q" id="qB">Q1 = B</button>
     </div>
     <div class="row">
+      <button class="gate" data-g="I">I</button>
       <button class="gate" data-g="H">H</button>
       <button class="gate" data-g="X">X</button>
       <button class="gate" data-g="Y">Y</button>
       <button class="gate" data-g="Z">Z</button>
+    </div>
+    <div class="row">
       <button class="gate" data-g="S">S</button>
+      <button class="gate" data-g="Sdg">S†</button>
       <button class="gate" data-g="T">T</button>
+      <button class="gate" data-g="Tdg">T†</button>
       <button class="gate" data-g="SX">√X</button>
+      <button class="gate" data-g="SXdg">√X†</button>
     </div>
     <div class="angwrap" style="margin-top:8px">
       <input type="range" id="ang" min="0" max="360" value="90" />
@@ -104,6 +110,14 @@
       <button class="gate" data-g="RX">Rx(θ)</button>
       <button class="gate" data-g="RY">Ry(θ)</button>
       <button class="gate" data-g="RZ">Rz(θ)</button>
+      <button class="gate" data-g="P">P(θ)</button>
+    </div>
+    <div class="urow">
+      <span>U(θ,φ,λ)°</span>
+      <input type="number" id="uTh" value="90" title="θ" />
+      <input type="number" id="uPh" value="0" title="φ" />
+      <input type="number" id="uLa" value="0" title="λ" />
+      <button class="gate" data-g="U">U</button>
     </div>
 
     <h2>Two-qubit gates</h2>
@@ -112,7 +126,10 @@
       <button class="two" data-g="CNOTBA">CNOT B→A</button>
       <button class="two" data-g="CZ">CZ</button>
       <button class="two" data-g="SWAP">SWAP</button>
+      <button class="two" data-g="RXX">Rxx(θ)</button>
+      <button class="two" data-g="RZZ">Rzz(θ)</button>
     </div>
+    <div class="small">Rxx/Rzz use the angle slider above — tunable entanglers.</div>
 
     <h2>State</h2>
     <div class="name" id="stateName">|00⟩</div>
@@ -196,6 +213,38 @@
       <p>Full notes: <a href="notes.html">rendered</a> ·
       <a href="bloch-sphere-and-entanglement.md">raw .md</a></p>
     </details>
+
+    <details>
+      <summary>Gate dictionary (what each does in these pictures)</summary>
+      <p><b>Single-qubit gates rotate one Bloch arrow</b> (hover a button to see the axis &amp; angle
+        on its sphere). They never create entanglement by themselves.</p>
+      <ul>
+        <li><b>I</b> — no rotation. <b>X / Y / Z</b> — 180° about x / y / z. <b>H</b> — 180° about
+          (x+z)/√2.</li>
+        <li><b>S, S†</b> — ±90° about z (S = √Z); <b>T, T†</b> — ±45° about z; <b>√X, √X†</b> —
+          ±90° about x.</li>
+        <li><b>P(θ)</b> — phase gate, θ about z (same arrow motion as Rz). <b>Rx/Ry/Rz(θ)</b> —
+          tunable θ about an axis. <b>U(θ,φ,λ)</b> — the universal gate; reaches any orientation.</li>
+      </ul>
+      <p><b>Two-qubit gates act on the coupling sphere &amp; entanglement</b> — the arrows shrink and
+        the centre sphere lights up:</p>
+      <ul>
+        <li><b>CNOT (CX)</b> — the workhorse entangler: on a superposed control (e.g. <code>H·A</code>
+          then CNOT) it builds a Bell state — both arrows collapse to the centre, the coupling sphere
+          blazes. On a basis state it's just a conditional flip (no entanglement).</li>
+        <li><b>CZ</b> — symmetric phase entangler; from <code>|++⟩</code> it makes a Bell-type state.
+          Equal to CNOT dressed with Hadamards.</li>
+        <li><b>SWAP</b> — exchanges the two qubits: the two arrows trade places. Creates <em>no</em>
+          entanglement (pure relabeling).</li>
+        <li><b>Rxx(θ)</b> — a <em>tunable</em> entangler about X⊗X: as θ goes 0→90° it smoothly grows
+          the ⟨XX⟩ correlation and shrinks the arrows; θ=90° is maximally entangling.</li>
+        <li><b>Rzz(θ)</b> — tunable entangler about Z⊗Z (the native interaction on much superconducting
+          hardware); grows ⟨ZZ⟩. CNOT = Rzz(90°) plus single-qubit gates.</li>
+      </ul>
+      <p class="small">Multi-qubit gates from the IBM palette (Toffoli/CCX, RCCX, RC3X) need 3–4
+        qubits; measure, |0⟩ reset, barrier and <code>if</code> aren't unitary rotations, so they
+        don't appear here. See the <a href="three-qubit.html">3-qubit page</a> for the multipartite story.</p>
+    </details>
   </div>
 </div>
 
@@ -203,9 +252,17 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 Q.initThree(THREE, OrbitControls);
-const { C, R2, gates, rotGate, axisAngle, applyU, cnot, cz, swap, normalize, bloch, density1, corrTensor, concurrence,
-  cmul, cconj, cabs2, fmtC, z, toThree, makeLabel, makeDynText, axisLine, setupScene, attachResize, startLoop,
-  makeBlochSphere, makeCouplingSphere, makeGatePreview, rotationToward, makeAnimator, makeReplay, V3 } = Q;
+const { C, R2, gates, rotGate, pGate, uGate, rxxGate, rzzGate, axisAngle, applyU, applyU2, cnot, cz, swap, normalize,
+  bloch, density1, corrTensor, concurrence, cmul, cconj, cabs2, fmtC, z, toThree, makeLabel, makeDynText, axisLine,
+  setupScene, attachResize, startLoop, makeBlochSphere, makeCouplingSphere, makeGatePreview, rotationToward, makeAnimator, makeReplay, V3 } = Q;
+const RAD = d => parseFloat(d) * Math.PI / 180;
+function gate1(name) {                            // single-qubit gate → {U, disp, tag}
+  if (name === 'RX' || name === 'RY' || name === 'RZ') return { U: rotGate(name[1], RAD($('ang').value)), disp: name[0] + name[1].toLowerCase(), tag: `${name[1]}(${$('ang').value}°)` };
+  if (name === 'P') return { U: pGate(RAD($('ang').value)), disp: 'P', tag: `P(${$('ang').value}°)` };
+  if (name === 'U') return { U: uGate(RAD($('uTh').value), RAD($('uPh').value), RAD($('uLa').value)), disp: 'U', tag: `U(${$('uTh').value},${$('uPh').value},${$('uLa').value})` };
+  const disp = { Sdg: 'S†', Tdg: 'T†', SXdg: '√X†' }[name] || name;
+  return { U: gates[name], disp, tag: disp };
+}
 const $ = id => document.getElementById(id);
 const N = 2;
 let state = [C(1), C(0), C(0), C(0)];
@@ -294,6 +351,7 @@ function update() {
 /* ---- gates + replay ---- */
 function applyOp(s, op) {
   if (op.kind === 1) return applyU(s, N, op.qubit, op.U);
+  if (op.kind === '2u') return applyU2(s, N, 0, 1, op.M);
   if (op.op === 'CNOTAB') return cnot(s, N, 0, 1);
   if (op.op === 'CNOTBA') return cnot(s, N, 1, 0);
   if (op.op === 'CZ') return cz(s, N, 0, 1);
@@ -305,9 +363,7 @@ const replay = makeReplay({
 });
 function doSingle(name) {
   const tag = activeQubit === 0 ? 'A' : 'B';
-  let U, label;
-  if (name === 'RX' || name === 'RY' || name === 'RZ') { U = rotGate(name[1], parseFloat($('ang').value) * Math.PI / 180); label = `${name[1]}(${$('ang').value}°)·${tag}`; }
-  else { U = gates[name]; label = `${name}·${tag}`; }
+  const g = gate1(name), U = g.U, label = `${g.tag}·${tag}`;
   const sph = activeQubit === 0 ? sphA : sphB;
   const b0 = bloch(state, N, activeQubit), r0 = vec(b0), len0 = b0.len, aa = axisAngle(U);
   replay.push({ kind: 1, qubit: activeQubit, U, label });
@@ -318,7 +374,15 @@ function doSingle(name) {
     sph.arrow.visible = true; sph.arrow.setDirection(cur.clone().normalize()); sph.arrow.setLength(Math.max(len0 * sph.r, 0.001), sph.head[0], sph.head[1]);
   });
 }
-function doTwo(name) { const labels = { CNOTAB: 'CNOT A→B', CNOTBA: 'CNOT B→A', CZ: 'CZ', SWAP: 'SWAP' }; replay.push({ kind: 2, op: name, label: labels[name] }); }
+function doTwo(name) {
+  if (name === 'RXX' || name === 'RZZ') {
+    const M = (name === 'RXX' ? rxxGate : rzzGate)(RAD($('ang').value));
+    replay.push({ kind: '2u', M, label: `${name}(${$('ang').value}°)` });
+    return;
+  }
+  const labels = { CNOTAB: 'CNOT A→B', CNOTBA: 'CNOT B→A', CZ: 'CZ', SWAP: 'SWAP' };
+  replay.push({ kind: 2, op: name, label: labels[name] });
+}
 
 const presets = {
   '00': [C(1), C(0), C(0), C(0)], '01': [C(0), C(1), C(0), C(0)], '10': [C(0), C(0), C(1), C(0)], '11': [C(0), C(0), C(0), C(1)],
@@ -329,12 +393,10 @@ const plabel = { '00': '|00⟩', '01': '|01⟩', '10': '|10⟩', '11': '|11⟩',
 document.querySelectorAll('button.gate').forEach(b => {
   b.addEventListener('click', () => doSingle(b.dataset.g));
   b.addEventListener('mouseenter', () => {
-    const name = b.dataset.g;
-    const U = (name === 'RX' || name === 'RY' || name === 'RZ') ? rotGate(name[1], parseFloat($('ang').value) * Math.PI / 180) : gates[name];
-    const aa = axisAngle(U);
+    const g = gate1(b.dataset.g), aa = axisAngle(g.U);
     if (aa.theta < 1e-4) { preview.hide(); return; }
-    const disp = name.startsWith('R') ? name[0] + name[1].toLowerCase() : name, sph = activeQubit === 0 ? sphA : sphB;
-    preview.show(sph.group.position, aa.axis, aa.theta, disp, vec(bloch(state, N, activeQubit)), sph.r);
+    const sph = activeQubit === 0 ? sphA : sphB;
+    preview.show(sph.group.position, aa.axis, aa.theta, g.disp, vec(bloch(state, N, activeQubit)), sph.r);
   });
   b.addEventListener('mouseleave', () => preview.hide());
 });
