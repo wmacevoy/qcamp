@@ -347,6 +347,8 @@
       fwd() { if (cursor < history.length) { cursor++; rebuild(); } },
       cont() { cursor = history.length; rebuild(); },
       jump(i) { cursor = Math.max(0, Math.min(history.length, i)); rebuild(); },
+      get cursor() { return cursor; },
+      get length() { return history.length; },
     };
   }
 
