@@ -213,15 +213,17 @@
 
   // a small labelled x/y/z axis triad for the sphere centre (Bloch x,y,z → three x,z,y)
   function makeAxisTriad(r) {
-    const g = new THREE.Group(), L = 0.42 * r;
+    // solid cylinder shafts + cone heads (Line shafts are 1px and often don't render)
+    const g = new THREE.Group(), L = 0.44 * r, sr = 0.014 * r, up = V3(0, 1, 0);
     [{ d: [1, 0, 0], c: 0xe57f7f, t: 'x' }, { d: [0, 0, 1], c: 0x76c08c, t: 'y' }, { d: [0, 1, 0], c: 0x8aa0e0, t: 'z' }].forEach(a => {
-      const dir = V3(a.d[0], a.d[1], a.d[2]);
-      const arrow = new THREE.ArrowHelper(dir, V3(0, 0, 0), L, a.c, 0.16 * L, 0.1 * L);
-      arrow.line.material.transparent = arrow.cone.material.transparent = true;
-      arrow.line.material.opacity = arrow.cone.material.opacity = 0.9;
-      g.add(arrow);
+      const dir = V3(a.d[0], a.d[1], a.d[2]), mat = new THREE.MeshBasicMaterial({ color: a.c });
+      const sl = L * 0.78, q = new THREE.Quaternion().setFromUnitVectors(up, dir);
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(sr, sr, sl, 8), mat);
+      shaft.quaternion.copy(q); shaft.position.copy(dir.clone().multiplyScalar(sl / 2)); g.add(shaft);
+      const head = new THREE.Mesh(new THREE.ConeGeometry(sr * 2.8, L * 0.26, 10), mat);
+      head.quaternion.copy(q); head.position.copy(dir.clone().multiplyScalar(sl + L * 0.13)); g.add(head);
       const lab = makeLabel(a.t, '#' + new THREE.Color(a.c).getHexString(), 0.18 * r + 0.06);
-      lab.position.copy(dir.clone().multiplyScalar(L + 0.13 * r)); g.add(lab);
+      lab.position.copy(dir.clone().multiplyScalar(L + 0.14 * r)); g.add(lab);
     });
     return g;
   }
@@ -283,15 +285,16 @@
   // hover preview of a gate as a rotation: axis line + sweep arc + angle label
   function makeGatePreview(scene) {
     const pv = new THREE.Group(); pv.visible = false; scene.add(pv);
-    const axis = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.85 })); pv.add(axis);
-    const arc = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffd24a })); pv.add(arc);
-    const tipCone = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.13, 14), new THREE.MeshBasicMaterial({ color: 0xffd24a })); pv.add(tipCone);
+    // kept translucent so the hint doesn't clutter the sphere
+    const axis = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.4 })); pv.add(axis);
+    const arc = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.5 })); pv.add(arc);
+    const tipCone = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.13, 14), new THREE.MeshBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.55 })); pv.add(tipCone);
     // washers marking where the axis pierces the sphere, + a mini direction/angle dial on +n̂
-    const washerMat = new THREE.MeshBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.6 });
+    const washerMat = new THREE.MeshBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.3 });
     const washerA = new THREE.Mesh(new THREE.TorusGeometry(1, 0.08, 8, 30), washerMat); pv.add(washerA);
     const washerB = new THREE.Mesh(new THREE.TorusGeometry(1, 0.08, 8, 30), washerMat); pv.add(washerB);
-    const dial = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffe98a })); pv.add(dial);
-    const dialHead = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.3, 10), new THREE.MeshBasicMaterial({ color: 0xffe98a })); pv.add(dialHead);
+    const dial = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffe98a, transparent: true, opacity: 0.6 })); pv.add(dial);
+    const dialHead = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.3, 10), new THREE.MeshBasicMaterial({ color: 0xffe98a, transparent: true, opacity: 0.6 })); pv.add(dialHead);
     const ZC = new THREE.Vector3(0, 0, 1), YC = new THREE.Vector3(0, 1, 0);
     const lab = makeDynText({ scale: 0.52 }); pv.add(lab.sprite);
     function show(center, axisBloch, theta, name, curThree, r = 1) {
