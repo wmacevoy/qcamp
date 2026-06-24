@@ -212,6 +212,16 @@
   }
 
   // a small labelled x/y/z axis triad for the sphere centre (Bloch x,y,z → three x,z,y)
+  // a billboard sprite of one letter with a dark outline, so it reads over anything
+  function outlineLabel(text, color, s) {
+    const cv = document.createElement('canvas'); cv.width = 128; cv.height = 128;
+    const ctx = cv.getContext('2d'); ctx.font = 'bold 92px Georgia, serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    ctx.lineWidth = 13; ctx.strokeStyle = 'rgba(8,12,22,0.92)'; ctx.strokeText(text, 64, 66);
+    ctx.fillStyle = color; ctx.fillText(text, 64, 66);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false }));
+    sp.scale.set(s, s, 1); sp.renderOrder = 6; return sp;   // sprites billboard by default
+  }
   function makeAxisTriad(r) {
     // solid cylinder shafts + cone heads (Line shafts are 1px and often don't render)
     const g = new THREE.Group(), L = 0.44 * r, sr = 0.014 * r, up = V3(0, 1, 0);
@@ -222,8 +232,8 @@
       shaft.quaternion.copy(q); shaft.position.copy(dir.clone().multiplyScalar(sl / 2)); g.add(shaft);
       const head = new THREE.Mesh(new THREE.ConeGeometry(sr * 2.8, L * 0.26, 10), mat);
       head.quaternion.copy(q); head.position.copy(dir.clone().multiplyScalar(sl + L * 0.13)); g.add(head);
-      const lab = makeLabel(a.t, '#' + new THREE.Color(a.c).getHexString(), 0.18 * r + 0.06);
-      lab.position.copy(dir.clone().multiplyScalar(L + 0.14 * r)); g.add(lab);
+      const lab = outlineLabel(a.t, '#' + new THREE.Color(a.c).getHexString(), 0.24 * r);
+      lab.position.copy(dir.clone().multiplyScalar(L + 0.17 * r)); g.add(lab);
     });
     return g;
   }
