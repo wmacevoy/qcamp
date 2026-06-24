@@ -352,12 +352,38 @@
     };
   }
 
+  // guided lessons: narrated, chunked steps that drive a replay timeline.
+  // els = { root, step, title, body, back, next, exit } (DOM nodes of the overlay).
+  // register({ id: { base, baseLabel, steps: [{ step, title, body, ops:[...] }] } }); start(id).
+  function makeLessons({ replay, els, onStart }) {
+    let lessons = {}, cur = null, idx = 0, cursors = [];
+    function show() {
+      const sc = cur.steps[idx];
+      els.step.textContent = sc.step; els.title.textContent = sc.title; els.body.innerHTML = sc.body;
+      els.back.disabled = idx === 0; els.next.disabled = idx >= cur.steps.length - 1;
+    }
+    function start(id) {
+      cur = lessons[id]; if (!cur) return; idx = 0;
+      replay.setBase(cur.base, cur.baseLabel);
+      cur.steps.forEach(s => (s.ops || []).forEach(op => replay.push(op)));
+      replay.reset();                                  // recipe loaded into the log, cursor at the start
+      cursors = [0]; let acc = 0;
+      for (let i = 1; i < cur.steps.length; i++) { acc += (cur.steps[i].ops || []).length; cursors.push(acc); }
+      if (onStart) onStart(cur);
+      els.root.hidden = false; show();
+    }
+    els.next.addEventListener('click', () => { const t = cursors[idx + 1]; while (replay.cursor < t) replay.fwd(); idx++; show(); });
+    els.back.addEventListener('click', () => { const t = cursors[idx - 1]; while (replay.cursor > t) replay.back(); idx--; show(); });
+    els.exit.addEventListener('click', () => { els.root.hidden = true; });
+    return { register(o) { lessons = o; }, start };
+  }
+
   g.Q = {
     C, cadd, csub, cmul, cconj, cabs2, R2, z, fmtC,
     gates, rotGate, pGate, uGate, rxxGate, rzzGate, PAULI, axisAngle,
     normalize, applyU, applyU2, mcx, mcz, cnot, cz, swap, expect, bloch, density1, corrTensor, concurrence, tangle3,
     initThree, toThree, perp, V3: (x, y, z) => new THREE.Vector3(x, y, z),
     makeLabel, makeDynText, axisLine, setupScene, attachResize, startLoop,
-    makeBlochSphere, makeCouplingSphere, makeGatePreview, rotationToward, makeAnimator, makeReplay,
+    makeBlochSphere, makeCouplingSphere, makeGatePreview, rotationToward, makeAnimator, makeReplay, makeLessons,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -78,6 +78,23 @@ input[type=range]{width:100%}
   border-radius:6px;padding:4px 5px;font-size:12px;font-family:ui-monospace,Menlo,Consolas,monospace}
 .urow button{flex:0 0 auto}
 
+/* guided lessons */
+.lesson-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.lesson-start{flex:1 1 auto;background:#241a3a;border-color:var(--link);color:#e7d4ff;padding:9px 10px;font-size:12.5px}
+.lesson-start:hover{background:#2e2147;border-color:var(--link)}
+#lesson{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:min(580px,92%);
+  background:rgba(13,19,35,.95);border:1px solid var(--link);border-radius:12px;padding:12px 16px;
+  box-shadow:0 8px 34px rgba(0,0,0,.55)}
+#lesson[hidden]{display:none}
+#lesson .ls-step{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--link)}
+#lesson .ls-title{font-size:15px;font-weight:700;color:#fff;margin:2px 0 5px}
+#lesson .ls-body{font-size:13px;line-height:1.45;color:#dbe4f5}
+#lesson .ls-body b{color:#fff} #lesson .ls-body .hot{color:#f0707f} #lesson .ls-body .ok{color:#4fe39a}
+#lesson .ls-ctrl{display:flex;gap:8px;margin-top:11px;align-items:center}
+#lesson .ls-ctrl button{padding:6px 13px;font-size:13px}
+#lesson #lsExit{margin-left:auto;background:transparent;border-color:transparent;color:var(--muted)}
+#lesson #lsExit:hover{color:#cfe2ff;background:transparent}
+
 /* gate dictionary (collapsible) */
 details{margin-top:14px;font-size:12.5px;line-height:1.5;color:#c4cfe6}
 details summary{cursor:pointer;color:var(--muted);font-weight:600}

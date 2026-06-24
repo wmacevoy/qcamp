@@ -64,11 +64,25 @@
     <canvas id="c"></canvas>
     <div id="teach">Apply gates and watch the arrows.</div>
     <div id="hint">drag to rotate · scroll to zoom · A (orange) &amp; B (blue) qubits · centre = coupling sphere</div>
+    <div id="lesson" hidden>
+      <div class="ls-step" id="lsStep"></div>
+      <div class="ls-title" id="lsTitle"></div>
+      <div class="ls-body" id="lsBody"></div>
+      <div class="ls-ctrl">
+        <button id="lsBack">← Back</button>
+        <button id="lsNext">Next →</button>
+        <button id="lsExit">Exit lesson</button>
+      </div>
+    </div>
   </div>
 
   <div id="panel">
     <h1>Bloch Spheres &amp; Entanglement</h1>
     <div class="sub">Two qubits · live reduced states · WebGL</div>
+
+    <div class="lesson-bar">
+      <button class="lesson-start" data-lesson="bell">▶ Guided lesson — build a Bell state</button>
+    </div>
 
     <h2>Presets</h2>
     <div class="row">
@@ -254,7 +268,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 Q.initThree(THREE, OrbitControls);
 const { C, R2, gates, rotGate, pGate, uGate, rxxGate, rzzGate, axisAngle, applyU, applyU2, cnot, cz, swap, normalize,
   bloch, density1, corrTensor, concurrence, cmul, cconj, cabs2, fmtC, z, toThree, makeLabel, makeDynText, axisLine,
-  setupScene, attachResize, startLoop, makeBlochSphere, makeCouplingSphere, makeGatePreview, rotationToward, makeAnimator, makeReplay, V3 } = Q;
+  setupScene, attachResize, startLoop, makeBlochSphere, makeCouplingSphere, makeGatePreview, rotationToward, makeAnimator, makeReplay, makeLessons, V3 } = Q;
 const RAD = d => parseFloat(d) * Math.PI / 180;
 function gate1(name) {                            // single-qubit gate → {U, disp, tag}
   if (name === 'RX' || name === 'RY' || name === 'RZ') return { U: rotGate(name[1], RAD($('ang').value)), disp: name[0] + name[1].toLowerCase(), tag: `${name[1]}(${$('ang').value}°)` };
@@ -411,6 +425,22 @@ $('rCont').addEventListener('click', () => replay.cont());
 $('log').addEventListener('click', e => { const el = e.target.closest('.step'); if (el) replay.jump(+el.dataset.i); });
 document.querySelectorAll('.cell').forEach(el => el.addEventListener('click', () => replay.setBase(presets[el.dataset.bell], plabel[el.dataset.bell])));
 document.querySelectorAll('button.preset').forEach(b => b.addEventListener('click', () => replay.setBase(presets[b.dataset.preset], plabel[b.dataset.preset])));
+
+/* ---- guided lesson: build a Bell state ---- */
+const lessons = makeLessons({
+  replay,
+  els: { root: $('lesson'), step: $('lsStep'), title: $('lsTitle'), body: $('lsBody'), back: $('lsBack'), next: $('lsNext'), exit: $('lsExit') },
+});
+lessons.register({
+  bell: {
+    base: [C(1), C(0), C(0), C(0)], baseLabel: '|00⟩', steps: [
+      { step: 'Setup', title: 'Start — |00⟩', ops: [], body: "Two independent qubits, both <b>|0⟩</b> (arrows up). C = 0 and the coupling sphere is dark. We'll build the Bell state <b>Φ⁺ = (|00⟩+|11⟩)/√2</b>." },
+      { step: 'Step 1 of 2', title: 'H on A', ops: [{ kind: 1, qubit: 0, U: gates.H, label: 'H·A' }], body: 'A Hadamard puts <b>A</b> into <b>|+⟩</b> (arrow to the equator). Still <b>separable</b> (C = 0): A is in superposition but not entangled with B.' },
+      { step: 'Done — Bell Φ⁺', title: 'CNOT A→B', ops: [{ kind: 2, op: 'CNOTAB', label: 'CNOT A→B' }], body: "Conditioning B on A entangles them: <b>both arrows collapse to the centre</b> and the <b>coupling sphere lights up</b> — C = 1. At two qubits the coupling sphere captures the entanglement perfectly; at three it won't — see the GHZ lesson." },
+    ],
+  },
+});
+document.querySelectorAll('.lesson-start').forEach(b => b.addEventListener('click', () => lessons.start(b.dataset.lesson)));
 
 attachResize($('stage'), renderer, camera);
 startLoop(renderer, scene, camera, controls, now => animator.tick(now));

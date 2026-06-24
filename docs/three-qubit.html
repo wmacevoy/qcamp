@@ -40,20 +40,6 @@
   .navlinks a{flex:1;text-align:center;background:#1c2a4a;color:#cfe2ff;border-radius:8px;padding:9px;
     text-decoration:none;font-weight:600;font-size:13px}
   .navlinks a:hover{background:#22335a}
-  .lesson-start{width:100%;margin-bottom:12px;background:#241a3a;border-color:var(--tri);color:#e7d4ff;padding:10px}
-  .lesson-start:hover{background:#2e2147;border-color:var(--tri)}
-  #lesson{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:min(580px,92%);
-    background:rgba(13,19,35,.95);border:1px solid var(--tri);border-radius:12px;padding:12px 16px;
-    box-shadow:0 8px 34px rgba(0,0,0,.55)}
-  #lesson[hidden]{display:none}
-  #lesson .ls-step{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tri)}
-  #lesson .ls-title{font-size:15px;font-weight:700;color:#fff;margin:2px 0 5px}
-  #lesson .ls-body{font-size:13px;line-height:1.45;color:#dbe4f5}
-  #lesson .ls-body b{color:#fff} #lesson .ls-body .hot{color:var(--fail)} #lesson .ls-body .ok{color:#4fe39a}
-  #lesson .ls-ctrl{display:flex;gap:8px;margin-top:11px;align-items:center}
-  #lesson .ls-ctrl button{padding:6px 13px;font-size:13px}
-  #lesson #lsExit{margin-left:auto;background:transparent;border-color:transparent;color:var(--muted)}
-  #lesson #lsExit:hover{color:#cfe2ff;background:transparent}
 </style>
 <script type="importmap">
 { "imports": {
@@ -92,7 +78,11 @@
     <h1>Three Qubits</h1>
     <div class="sub">the same toolkit — now apply gates and watch it break</div>
 
-    <button id="lsStart" class="lesson-start">▶ Guided lesson — build GHZ step by step</button>
+    <div class="lesson-bar">
+      <button class="lesson-start" data-lesson="ghz">▶ Build GHZ</button>
+      <button class="lesson-start" data-lesson="tofccz">▶ Toffoli = CCZ·H</button>
+      <button class="lesson-start" data-lesson="tofct">▶ Toffoli from H,T,CNOT</button>
+    </div>
 
     <h2>Start from</h2>
     <div class="row">
@@ -226,7 +216,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 Q.initThree(THREE, OrbitControls);
 const { C, R2, gates, rotGate, pGate, uGate, rxxGate, rzzGate, axisAngle, applyU, applyU2, mcx, mcz, swap,
   bloch, corrTensor, tangle3, cabs2, toThree, makeLabel, axisLine, setupScene, attachResize, startLoop,
-  makeBlochSphere, makeCouplingSphere, makeGatePreview, makeAnimator, rotationToward, makeReplay, V3 } = Q;
+  makeBlochSphere, makeCouplingSphere, makeGatePreview, makeAnimator, rotationToward, makeReplay, makeLessons, V3 } = Q;
 const $ = id => document.getElementById(id), N = 3, R3 = 1 / Math.sqrt(3), R8 = 1 / Math.sqrt(8), QN = ['A', 'B', 'C'];
 const RAD = d => parseFloat(d) * Math.PI / 180;
 let state = new Array(8).fill(0).map(() => C(0));
@@ -294,8 +284,13 @@ function update() {
   $('teach').innerHTML = teach; $('reck').innerHTML = reck;
 
   const ket = i => '|' + ((i >> 2) & 1) + ((i >> 1) & 1) + (i & 1) + '⟩';
-  $('amps').textContent = state.map((a, i) => cabs2(a) > 1e-6 ? `${a.re < 0 || a.im < 0 ? '−' : ''}${Math.hypot(a.re, a.im).toFixed(3)}${ket(i)}` : null)
-    .filter(Boolean).join('  +  ').replace(/\+  −/g, '−');
+  let g0 = null;                                       // factor out the (unobservable) global phase
+  for (let i = 0; i < 8; i++) if (cabs2(state[i]) > 1e-9) { const m = Math.hypot(state[i].re, state[i].im); g0 = { re: state[i].re / m, im: state[i].im / m }; break; }
+  $('amps').textContent = state.map((a, i) => {
+    if (cabs2(a) <= 1e-6) return null;
+    const re = a.re * g0.re + a.im * g0.im;            // Re(a · conj(global phase))
+    return `${re < -1e-6 ? '−' : ''}${Math.hypot(a.re, a.im).toFixed(3)}${ket(i)}`;
+  }).filter(Boolean).join('  +  ').replace(/\+  −/g, '−');
 }
 
 /* ---- gate engine: target + controls, single- and multi-qubit, with replay ---- */
@@ -381,38 +376,43 @@ $('rFwd').addEventListener('click', () => replay.fwd());
 $('rCont').addEventListener('click', () => replay.cont());
 $('log').addEventListener('click', e => { const el = e.target.closest('.step'); if (el) replay.jump(+el.dataset.i); });
 
-/* ---- guided lesson: build GHZ, narrated, driving the replay engine ---- */
-const ghzOps = [
-  { kind: 1, qubit: 0, U: gates.H, label: 'H·A' },
-  { kind: 'mcx', controls: [0], target: 1, label: 'CX A→B' },
-  { kind: 'mcx', controls: [1], target: 2, label: 'CX B→C' },
-];
-const ghzScreens = [
-  { step: 'Setup', title: 'Start — |000⟩',
-    body: "Three independent qubits, each <b>|0⟩</b> (all arrows point up). τ₃ = 0 — nothing is entangled. We'll build <b>GHZ = (|000⟩ + |111⟩)/√2</b> and watch the Bloch picture go blind." },
-  { step: 'Step 1 of 3', title: 'H on A',
-    body: 'A Hadamard puts qubit <b>A</b> into <b>|+⟩</b> — its arrow swings to the equator. Still a product state (τ₃ = 0): A is in superposition, but not yet entangled with anyone.' },
-  { step: 'Step 2 of 3', title: 'CNOT A→B',
-    body: 'Conditioning B on A entangles them into a <b>Bell pair</b>: the A and B arrows collapse to the centre and the <b>A·B coupling sphere lights up</b>. τ₃ is still 0 — ordinary 2-body entanglement, fully visible in the coupling.' },
-  { step: 'Done — GHZ', title: 'The blind spot',
-    body: 'One more CNOT spreads it to C. Now look: <b>every arrow sits at the centre</b> and every coupling shows only a classical z-correlation — the picture looks barely entangled. Yet <span class="hot">τ₃ = 1</span>: this is <b>maximally entangled</b>. The entanglement is purely 3-body — <b>no sphere or edge can show it</b>. That is why the Bloch representation breaks at three qubits.' },
-];
-function showLesson() {
-  const i = Math.max(0, Math.min(replay.cursor, ghzScreens.length - 1)), sc = ghzScreens[i];
-  $('lsStep').textContent = sc.step; $('lsTitle').textContent = sc.title; $('lsBody').innerHTML = sc.body;
-  $('lsBack').disabled = i === 0; $('lsNext').disabled = i >= ghzOps.length;
-}
-$('lsStart').addEventListener('click', () => {
-  replay.setBase(presets['000'], '|000⟩');
-  ghzOps.forEach(op => replay.push(op));
-  replay.reset();                       // recipe loaded into the log, cursor at the start
-  document.querySelectorAll('button.preset').forEach(x => x.classList.toggle('on', x.dataset.preset === '000'));
-  $('stateName').textContent = 'building GHZ…';
-  $('lesson').hidden = false; showLesson();
+/* ---- guided lessons ---- */
+const H = q => ({ kind: 1, qubit: q, U: gates.H, label: `H·${QN[q]}` });
+const G = (q, U, lab) => ({ kind: 1, qubit: q, U, label: `${lab}·${QN[q]}` });
+const CX = (c, t) => ({ kind: 'mcx', controls: [c], target: t, label: `CX ${QN[c]}→${QN[t]}` });
+const unit110 = (() => { const s = new Array(8).fill(0).map(() => C(0)); s[6] = C(1); return s; })();
+const lessons = makeLessons({
+  replay,
+  els: { root: $('lesson'), step: $('lsStep'), title: $('lsTitle'), body: $('lsBody'), back: $('lsBack'), next: $('lsNext'), exit: $('lsExit') },
+  onStart: l => { document.querySelectorAll('button.preset').forEach(x => x.classList.remove('on')); $('stateName').textContent = l.baseLabel; },
 });
-$('lsNext').addEventListener('click', () => { replay.fwd(); showLesson(); });
-$('lsBack').addEventListener('click', () => { replay.back(); showLesson(); });
-$('lsExit').addEventListener('click', () => { $('lesson').hidden = true; });
+lessons.register({
+  ghz: {
+    base: presets['000'], baseLabel: '|000⟩', steps: [
+      { step: 'Setup', title: 'Start — |000⟩', ops: [], body: "Three independent qubits, each <b>|0⟩</b>. τ₃ = 0 — nothing entangled. We'll build <b>GHZ = (|000⟩ + |111⟩)/√2</b> and watch the picture go blind." },
+      { step: 'Step 1 of 3', title: 'H on A', ops: [H(0)], body: 'A Hadamard puts <b>A</b> into <b>|+⟩</b> — its arrow swings to the equator. Still a product state (τ₃ = 0).' },
+      { step: 'Step 2 of 3', title: 'CNOT A→B', ops: [CX(0, 1)], body: 'A and B become a <b>Bell pair</b>: their arrows collapse to the centre and the <b>A·B coupling lights up</b>. τ₃ still 0 — ordinary 2-body entanglement, fully visible.' },
+      { step: 'Done — GHZ', title: 'The blind spot', ops: [CX(1, 2)], body: 'One more CNOT spreads it to C. Now <b>every arrow sits at the centre</b> and every coupling shows only classical z-correlation — yet <span class="hot">τ₃ = 1</span>: <b>maximally entangled</b>, purely 3-body. <b>No sphere or edge shows it.</b> That is why the representation breaks at three qubits.' },
+    ],
+  },
+  tofccz: {
+    base: unit110, baseLabel: '|110⟩', steps: [
+      { step: 'Setup', title: 'Toffoli = a CCZ in disguise', ops: [], body: 'Input <b>|110⟩</b> (both controls 1, target 0). A Toffoli should flip the target → <b>|111⟩</b>. We\'ll get there with a gate that has no "target" at all.' },
+      { step: 'Step 1 of 3', title: 'H on the target C', ops: [H(2)], body: 'Move C into the X-basis (|0⟩→|+⟩). The state is now |11⟩⊗|+⟩.' },
+      { step: 'Step 2 of 3', title: 'CCZ (symmetric)', ops: [{ kind: 'mcz', qubits: [0, 1, 2], label: 'CCZ ABC' }], body: '<b>CCZ</b> puts a −1 phase on <b>|111⟩</b> only, and treats all three qubits identically. In the X-basis that flips C: |+⟩→|−⟩.' },
+      { step: 'Done', title: 'H on C → |111⟩', ops: [H(2)], body: 'Undo the basis change → <b>|111⟩</b>, exactly a Toffoli. So <b>CCX = H·CCZ·H</b> on the target — and since CCZ is symmetric, <em>any</em> qubit can play "target".' },
+    ],
+  },
+  tofct: {
+    base: unit110, baseLabel: '|110⟩', steps: [
+      { step: 'Setup', title: 'Toffoli on real hardware', ops: [], body: "No device has a native 3-qubit gate. A Toffoli compiles into only <b>H, T, T†, CNOT</b> (the Clifford+T set). Input <b>|110⟩</b>; it should land on <b>|111⟩</b>. The middle states are messy superpositions — that's expected." },
+      { step: 'Step 1 of 3', title: 'Open the target', ops: [H(2), CX(1, 2), G(2, gates.Tdg, 'T†'), CX(0, 2), G(2, gates.T, 'T')], body: 'H on C, then a ladder of CNOTs interleaved with T/T† phase kicks.' },
+      { step: 'Step 2 of 3', title: 'Phase ladder', ops: [CX(1, 2), G(2, gates.Tdg, 'T†'), CX(0, 2), G(1, gates.T, 'T'), G(2, gates.T, 'T'), CX(0, 1), H(2)], body: 'More CNOT + T/T† to line the phases up on |111⟩.' },
+      { step: 'Done — |111⟩', title: 'Close it out', ops: [G(0, gates.T, 'T'), G(1, gates.Tdg, 'T†'), CX(0, 1)], body: 'A final T, T† and CNOT on the controls → <b>|111⟩</b>. Exactly a Toffoli, built from only 1- and 2-qubit gates — how a real device runs CCX.' },
+    ],
+  },
+});
+document.querySelectorAll('.lesson-start').forEach(b => b.addEventListener('click', () => lessons.start(b.dataset.lesson)));
 
 attachResize($('stage'), renderer, camera);
 startLoop(renderer, scene, camera, controls, now => animator.tick(now));
