@@ -211,6 +211,21 @@
     (function tick() { controls.update(); if (onFrame) onFrame(performance.now()); renderer.render(scene, camera); requestAnimationFrame(tick); })();
   }
 
+  // a small labelled x/y/z axis triad for the sphere centre (Bloch x,y,z → three x,z,y)
+  function makeAxisTriad(r) {
+    const g = new THREE.Group(), L = 0.42 * r;
+    [{ d: [1, 0, 0], c: 0xe57f7f, t: 'x' }, { d: [0, 0, 1], c: 0x76c08c, t: 'y' }, { d: [0, 1, 0], c: 0x8aa0e0, t: 'z' }].forEach(a => {
+      const dir = V3(a.d[0], a.d[1], a.d[2]);
+      const arrow = new THREE.ArrowHelper(dir, V3(0, 0, 0), L, a.c, 0.16 * L, 0.1 * L);
+      arrow.line.material.transparent = arrow.cone.material.transparent = true;
+      arrow.line.material.opacity = arrow.cone.material.opacity = 0.9;
+      g.add(arrow);
+      const lab = makeLabel(a.t, '#' + new THREE.Color(a.c).getHexString(), 0.18 * r + 0.06);
+      lab.position.copy(dir.clone().multiplyScalar(L + 0.13 * r)); g.add(lab);
+    });
+    return g;
+  }
+
   // a Bloch sphere with arrow + (centre) mixedness dot; .set(blochVec) updates it
   function makeBlochSphere(scene, opts = {}) {
     const cx = opts.cx || 0, cy = opts.cy || 0, r = opts.r || 1, color = opts.arrowColor ?? 0xffd24a;
@@ -221,6 +236,7 @@
     g.add(axisLine(V3(0, -r * 1.16, 0), V3(0, r * 1.16, 0), 0x6f7fb5));
     g.add(axisLine(V3(-r * 1.16, 0, 0), V3(r * 1.16, 0, 0), 0xd06a6a));
     g.add(axisLine(V3(0, 0, -r * 1.16), V3(0, 0, r * 1.16), 0x69b07a));
+    if (opts.triad !== false) g.add(makeAxisTriad(r));
     if (opts.kets !== false) {
       const l0 = makeLabel('|0⟩', '#dfe6f7', 0.46); l0.position.set(0, r + 0.27, 0); g.add(l0);
       const l1 = makeLabel('|1⟩', '#dfe6f7', 0.46); l1.position.set(0, -r - 0.27, 0); g.add(l1);
