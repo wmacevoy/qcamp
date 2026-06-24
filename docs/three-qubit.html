@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Three Qubits — where the picture breaks</title>
+<link rel="stylesheet" href="q.css" />
+<style>
+  :root{--tri:#c56cf0;--pair:#34c3ff;--fail:#f0707f}
+  .qnav a.active{background:#3a1722;color:#f0a0ac}
+  .qnav .warn{color:var(--fail)}
+  #teach{font-size:13.5px} #teach b{color:var(--fail)} #teach .ok{color:#4fe39a}
+  #panel{flex:0 0 360px;max-width:360px}
+  button{padding:8px 10px}
+  button.preset{flex:1 1 44%}
+  button.preset.on{border-color:var(--tri);background:#241a3a;color:#e7d4ff}
+  .name{margin:0 0 4px}
+  .amps{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:var(--muted);
+    text-align:center;margin-bottom:6px;word-break:break-word}
+  .big{font-size:15px;font-weight:700;text-align:center;border-radius:10px;padding:11px;margin-bottom:4px;
+    border:1px solid var(--line);background:var(--panel2)}
+  .big.hot{border-color:var(--fail);background:#2a131a;color:#ffd0d7}
+  .big.cool{border-color:#1d6b45;background:#10241b;color:#bff0d4}
+  .legend{display:flex;gap:14px;font-size:11px;color:var(--muted);margin:2px 0 8px;justify-content:center}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin-right:4px}
+  .qrow{display:flex;align-items:center;gap:8px;margin:5px 0}
+  .qrow .lab{width:60px;font-size:12px;color:#cfe2ff}
+  .budget{flex:1;height:15px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex}
+  .budget .tri{background:var(--tri)} .budget .pair{background:var(--pair)}
+  .qrow .val{width:54px;text-align:right;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;
+    font-family:ui-monospace,Menlo,Consolas,monospace}
+  .note{font-size:12.5px;line-height:1.5;color:#c4cfe6}
+  .alt{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:11px;font-size:12.5px;line-height:1.5;color:#c4cfe6}
+  .alt b{color:#cfe2ff} .alt svg{display:block;margin:8px auto 4px}
+  .navlinks{display:flex;gap:8px;margin-top:16px}
+  .navlinks a{flex:1;text-align:center;background:#1c2a4a;color:#cfe2ff;border-radius:8px;padding:9px;
+    text-decoration:none;font-weight:600;font-size:13px}
+  .navlinks a:hover{background:#22335a}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script src="qlib.js"></script>
+</head>
+<body>
+<nav class="qnav">
+  <span class="brand">Bloch &amp; Entanglement</span>
+  <a href="index.html">Overview</a>
+  <a href="one-qubit.html">1 qubit</a>
+  <a href="two-qubit.html">2 qubits</a>
+  <a href="three-qubit.html" class="active">3 qubits</a>
+  <span class="warn">3 qubits — the representation breaks</span>
+</nav>
+<div id="app">
+  <div id="stage">
+    <canvas id="c"></canvas>
+    <div id="teach"></div>
+    <div id="hint">drag to rotate · scroll to zoom · 3 Bloch spheres + 3 edge coupling spheres</div>
+  </div>
+  <div id="panel">
+    <h1>Three Qubits</h1>
+    <div class="sub">the same toolkit — honestly applied</div>
+
+    <h2>States</h2>
+    <div class="row">
+      <button class="preset" data-preset="ghz">GHZ</button>
+      <button class="preset" data-preset="w">W</button>
+      <button class="preset" data-preset="000">|000⟩</button>
+      <button class="preset" data-preset="ppp">|+++⟩</button>
+    </div>
+    <div class="name" id="stateName">GHZ</div>
+    <div class="amps" id="amps"></div>
+
+    <h2>What the picture misses</h2>
+    <div class="big" id="tau3">τ₃ = 0.00</div>
+    <div class="note" id="tau3note" style="text-align:center;margin-bottom:4px"></div>
+
+    <h2>Per-qubit entanglement budget</h2>
+    <div class="legend">
+      <span><i style="background:var(--tri)"></i>tripartite (invisible)</span>
+      <span><i style="background:var(--pair)"></i>pairwise (visible)</span>
+    </div>
+    <div id="budgets"></div>
+    <div class="note" style="margin-top:6px"><code>τ<sub>q|rest</sub> = 1 − |r⃗<sub>q</sub>|²</code>
+      splits into pairwise couplings + a genuinely tripartite remainder (the 3-tangle).</div>
+
+    <h2>Honest reckoning</h2>
+    <div class="alt" id="reck"></div>
+
+    <h2>What captures it instead</h2>
+    <div class="alt">
+      <b>Graph / cluster states</b> — qubits = nodes, entangling gates = edges. Complete for
+      stabilizer states; GHZ is a star/triangle graph:
+      <svg width="120" height="78" viewBox="0 0 120 78">
+        <line x1="60" y1="14" x2="28" y2="64" stroke="#c56cf0" stroke-width="2"/>
+        <line x1="60" y1="14" x2="92" y2="64" stroke="#c56cf0" stroke-width="2"/>
+        <line x1="28" y1="64" x2="92" y2="64" stroke="#c56cf0" stroke-width="2"/>
+        <circle cx="60" cy="14" r="9" fill="#1c2a4a" stroke="#54a0ff" stroke-width="2"/>
+        <circle cx="28" cy="64" r="9" fill="#1c2a4a" stroke="#54a0ff" stroke-width="2"/>
+        <circle cx="92" cy="64" r="9" fill="#1c2a4a" stroke="#54a0ff" stroke-width="2"/>
+        <text x="60" y="18" fill="#cfe2ff" font-size="10" text-anchor="middle">A</text>
+        <text x="28" y="68" fill="#cfe2ff" font-size="10" text-anchor="middle">B</text>
+        <text x="92" y="68" fill="#cfe2ff" font-size="10" text-anchor="middle">C</text>
+      </svg>
+      <b>Tensor networks</b> (MPS / PEPS) — efficient when entanglement is bounded; the grid of
+      tensors mirrors the qubit grid. &nbsp; <b>Higher-order correlators</b> — the 3-body
+      ⟨σ⊗σ⊗σ⟩ tensor that the pairwise couplings throw away.
+    </div>
+
+    <div class="navlinks">
+      <a href="two-qubit.html">← 2 qubits</a>
+      <a href="index.html">Overview</a>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+Q.initThree(THREE, OrbitControls);
+const { C, R2, cabs2, bloch, corrTensor, tangle3, makeLabel, axisLine, setupScene, attachResize, startLoop, makeBlochSphere, makeCouplingSphere, V3 } = Q;
+const $ = id => document.getElementById(id);
+const N = 3, R3 = 1 / Math.sqrt(3), R8 = 1 / Math.sqrt(8);
+let state = new Array(8).fill(0).map(() => C(0));
+
+const presets = {
+  ghz: (() => { const s = new Array(8).fill(0).map(() => C(0)); s[0] = C(R2); s[7] = C(R2); return s; })(),
+  w:   (() => { const s = new Array(8).fill(0).map(() => C(0)); s[1] = C(R3); s[2] = C(R3); s[4] = C(R3); return s; })(),
+  '000': (() => { const s = new Array(8).fill(0).map(() => C(0)); s[0] = C(1); return s; })(),
+  ppp: (() => new Array(8).fill(0).map(() => C(R8)))(),
+};
+const pName = { ghz: 'GHZ', w: 'W', '000': '|000⟩', ppp: '|+++⟩' };
+const teachByPreset = {
+  ghz: '<b>BLIND SPOT.</b> Every arrow sits at the centre and every coupling sphere shows only a classical z-correlation — the picture looks barely entangled. Yet τ₃ = 1: this is <b>maximally entangled</b>. All of it lives in 3-body correlations no sphere or edge can show.',
+  w:   '<span class="ok">Here the picture works.</span> Arrows are partly raised and the couplings are genuinely entangled — W keeps its entanglement in the <span class="ok">pairs</span>, so τ₃ = 0 and nothing is hidden.',
+  '000': 'Product state. Arrows full, couplings empty, τ₃ = 0 — there is simply no entanglement to represent. The picture is honest here.',
+  ppp: 'Product state in the X basis (|+++⟩). Arrows point fully along x, no coupling, τ₃ = 0 — again nothing to miss.',
+};
+const reckByPreset = {
+  ghz: 'GHZ is the poster child: 1- and 2-body marginals <b>cannot distinguish</b> it from three independent fair coins with a shared bit. The exponential truth (8 amplitudes) collapses onto a handful of pairwise numbers — and the genuinely multipartite part vanishes from view.',
+  w:   'W is the friendly case: its entanglement is <b>monogamously shared</b> across the three pairs, so the coupling spheres faithfully carry it. This is the lucky exception, not the rule.',
+  '000': 'No entanglement at all — the spheres + couplings are trivially complete here.',
+  ppp: 'A product state. Complete, but only because there is nothing multipartite to lose.',
+};
+
+/* ---- scene: 3 Bloch spheres on a triangle + 3 edge coupling spheres ---- */
+const { renderer, scene, camera, controls } = setupScene($('c'), { cameraPos: [0, 0.15, 6.9], target: [0, 0.15, 0], ambient: 0.85 });
+const PA = [0, 1.45], PB = [-1.65, -1.0], PC = [1.65, -1.0];
+const mid = (p, q) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+scene.add(axisLine(V3(PA[0], PA[1], 0), V3(PB[0], PB[1], 0), 0x2c3a5c, 0.6));
+scene.add(axisLine(V3(PA[0], PA[1], 0), V3(PC[0], PC[1], 0), 0x2c3a5c, 0.6));
+scene.add(axisLine(V3(PB[0], PB[1], 0), V3(PC[0], PC[1], 0), 0x2c3a5c, 0.6));
+const blA = makeBlochSphere(scene, { cx: PA[0], cy: PA[1], r: 0.7, arrowColor: 0xff9f43, tag: 'A', head: [0.16, 0.1], kets: false });
+const blB = makeBlochSphere(scene, { cx: PB[0], cy: PB[1], r: 0.7, arrowColor: 0x54a0ff, tag: 'B', head: [0.16, 0.1], kets: false });
+const blC = makeBlochSphere(scene, { cx: PC[0], cy: PC[1], r: 0.7, arrowColor: 0x4fe39a, tag: 'C', head: [0.16, 0.1], kets: false });
+function couplingAt(p, q, tag) {
+  const m = mid(p, q), c = makeCouplingSphere(scene, { cx: m[0], cy: m[1], rad: 0.32, seg: 30 });
+  const lab = makeLabel(tag, '#9fb0d8', 0.34); lab.position.set(m[0], m[1] + 0.48, 0); scene.add(lab);
+  return c;
+}
+const cpAB = couplingAt(PA, PB, 'A·B'), cpAC = couplingAt(PA, PC, 'A·C'), cpBC = couplingAt(PB, PC, 'B·C');
+
+/* ---- readouts ---- */
+let currentPreset = 'ghz';
+function update() {
+  const rA = bloch(state, N, 0), rB = bloch(state, N, 1), rC = bloch(state, N, 2);
+  blA.set(rA); blB.set(rB); blC.set(rC);
+  cpAB.set(corrTensor(state, N, 0, 1)); cpAC.set(corrTensor(state, N, 0, 2)); cpBC.set(corrTensor(state, N, 1, 2));
+
+  const t3 = tangle3(state);
+  const t3el = $('tau3');
+  t3el.textContent = `τ₃ (genuine tripartite, invisible to this view) = ${t3.toFixed(2)}`;
+  t3el.className = 'big ' + (t3 > 0.5 ? 'hot' : 'cool');
+  $('tau3note').textContent = t3 > 0.5 ? 'none of this entanglement appears on any sphere or coupling' : 'no hidden multipartite entanglement';
+
+  const tags = ['A', 'B', 'C'], rs = [rA, rB, rC];
+  $('budgets').innerHTML = tags.map((tg, i) => {
+    const tot = 1 - rs[i].len * rs[i].len, tri = Math.min(t3, tot), pair = Math.max(0, tot - tri);
+    return `<div class="qrow"><span class="lab">${tg}|rest</span>` +
+      `<div class="budget"><span class="tri" style="width:${(tri * 100).toFixed(1)}%"></span>` +
+      `<span class="pair" style="width:${(pair * 100).toFixed(1)}%"></span></div>` +
+      `<span class="val">${tot.toFixed(2)}</span></div>`;
+  }).join('');
+
+  $('teach').innerHTML = teachByPreset[currentPreset];
+  $('reck').innerHTML = reckByPreset[currentPreset];
+
+  const ket = i => '|' + ((i >> 2) & 1) + ((i >> 1) & 1) + (i & 1) + '⟩';
+  $('amps').textContent = state.map((a, i) => cabs2(a) > 1e-6 ? `${a.re < 0 || a.im < 0 ? '−' : ''}${Math.hypot(a.re, a.im).toFixed(3)}${ket(i)}` : null)
+    .filter(Boolean).join('  +  ').replace(/\+  −/g, '−');
+}
+function setPreset(key) {
+  currentPreset = key;
+  state = presets[key].map(a => C(a.re, a.im));
+  $('stateName').textContent = pName[key];
+  document.querySelectorAll('button.preset').forEach(b => b.classList.toggle('on', b.dataset.preset === key));
+  update();
+}
+document.querySelectorAll('button.preset').forEach(b => b.addEventListener('click', () => setPreset(b.dataset.preset)));
+
+attachResize($('stage'), renderer, camera);
+startLoop(renderer, scene, camera, controls);
+setPreset('ghz');
+</script>
+</body>
+</html>

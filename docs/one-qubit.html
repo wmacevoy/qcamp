@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>One Qubit — the complete Bloch sphere</title>
+<link rel="stylesheet" href="q.css" />
+<style>
+  .qnav .warn{color:var(--good)}
+  button.preset{flex:1 1 28%}
+  .callout{background:#10331f;border:1px solid #1d6b45;border-radius:8px;padding:10px;font-size:12.5px;color:#bff0d4}
+  .callout b{color:var(--good)}
+  .next{display:block;margin-top:16px;text-align:center;background:#1c2a4a;color:#cfe2ff;border-radius:8px;
+    padding:9px;text-decoration:none;font-weight:600}
+  .next:hover{background:#22335a}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script src="qlib.js"></script>
+</head>
+<body>
+<nav class="qnav">
+  <span class="brand">Bloch &amp; Entanglement</span>
+  <a href="index.html">Overview</a>
+  <a href="one-qubit.html" class="active">1 qubit</a>
+  <a href="two-qubit.html">2 qubits</a>
+  <a href="three-qubit.html">3 qubits</a>
+  <span class="warn">1 qubit — the Bloch sphere is the whole truth</span>
+</nav>
+<div id="app">
+  <div id="stage">
+    <canvas id="c"></canvas>
+    <div id="teach">Apply gates and watch the single arrow move.</div>
+    <div id="hint">drag to rotate · scroll to zoom · hover a gate to preview its rotation</div>
+  </div>
+  <div id="panel">
+    <h1>One Qubit</h1>
+    <div class="sub">A single Bloch sphere — complete</div>
+
+    <h2>Presets</h2>
+    <div class="row">
+      <button class="preset" data-preset="0">|0⟩</button>
+      <button class="preset" data-preset="1">|1⟩</button>
+      <button class="preset" data-preset="+">|+⟩</button>
+      <button class="preset" data-preset="-">|−⟩</button>
+      <button class="preset" data-preset="+i">|+i⟩</button>
+      <button class="preset" data-preset="-i">|−i⟩</button>
+    </div>
+
+    <h2>Gates</h2>
+    <div class="row">
+      <button class="gate" data-g="H">H</button>
+      <button class="gate" data-g="X">X</button>
+      <button class="gate" data-g="Y">Y</button>
+      <button class="gate" data-g="Z">Z</button>
+      <button class="gate" data-g="S">S</button>
+      <button class="gate" data-g="T">T</button>
+      <button class="gate" data-g="SX">√X</button>
+    </div>
+    <div class="angwrap" style="margin-top:8px">
+      <input type="range" id="ang" min="0" max="360" value="90" />
+      <span id="angv">90°</span>
+    </div>
+    <div class="row">
+      <button class="gate" data-g="RX">Rx(θ)</button>
+      <button class="gate" data-g="RY">Ry(θ)</button>
+      <button class="gate" data-g="RZ">Rz(θ)</button>
+    </div>
+
+    <h2>State</h2>
+    <div class="name" id="stateName">|0⟩</div>
+    <table class="state" id="stateTbl"></table>
+    <div class="kv"><span>θ (polar)</span><span id="theta">0.0°</span></div>
+    <div class="kv"><span>φ (azimuth)</span><span id="phi">0.0°</span></div>
+    <div class="kv"><span>|r⃗| (purity)</span><span id="rlen">1.000</span></div>
+    <div class="mat" id="mat"></div>
+
+    <h2>Why "complete"?</h2>
+    <div class="callout">For one qubit the arrow <b>is</b> the entire state:
+      a pure state always sits <b>on the surface</b> (<code>|r⃗| = 1</code>), and its
+      direction <code>(θ, φ)</code> fixes the two amplitudes. The only thing not drawn is the
+      global phase — and that is physically unobservable. <b>Nothing is hidden.</b>
+      Add a second qubit and that stops being true.</div>
+
+    <h2>Gate log &amp; replay</h2>
+    <div class="replay">
+      <button id="rReset" title="to start">⏮</button>
+      <button id="rBack" title="step back">◀</button>
+      <button id="rFwd" title="step forward">▶</button>
+      <button id="rCont" title="to latest">⏭</button>
+      <span class="pos" id="logPos">0 / 0</span>
+    </div>
+    <div id="log"></div>
+
+    <a class="next" href="two-qubit.html">Next: 2 qubits — where it gets interesting →</a>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+Q.initThree(THREE, OrbitControls);
+const { C, R2, gates, rotGate, axisAngle, applyU, bloch, density1, normalize, cmul, cconj, cabs2, fmtC, z,
+  toThree, makeLabel, setupScene, attachResize, startLoop, makeBlochSphere, makeGatePreview, rotationToward, makeAnimator, makeReplay } = Q;
+const $ = id => document.getElementById(id);
+const N = 1;
+let state = [C(1), C(0)];
+
+/* ---- this page's named states ---- */
+const named = [
+  ['|0⟩', [C(1), C(0)]], ['|1⟩', [C(0), C(1)]], ['|+⟩', [C(R2), C(R2)]],
+  ['|−⟩', [C(R2), C(-R2)]], ['|+i⟩', [C(R2), C(0, R2)]], ['|−i⟩', [C(R2), C(0, -R2)]],
+];
+function classify() {
+  for (const [nm, v] of named) {
+    let re = 0, im = 0;
+    for (let i = 0; i < 2; i++) { const t = cmul(cconj(v[i]), state[i]); re += t.re; im += t.im; }
+    if (re * re + im * im > 0.9995) return nm;
+  }
+  return 'superposition';
+}
+
+/* ---- scene ---- */
+const { renderer, scene, camera, controls } = setupScene($('c'), { cameraPos: [1.4, 1.1, 3.6], point: 60 });
+const sphere = makeBlochSphere(scene, { r: 1, arrowColor: 0xffd24a });
+const lp = makeLabel('|+⟩', '#d6a0a0', 0.42); lp.position.set(1.26, 0, 0); scene.add(lp);
+const li = makeLabel('|+i⟩', '#9fc7a0', 0.5); li.position.set(0, 0, 1.3); scene.add(li);
+const tip = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffd24a })); scene.add(tip);
+const preview = makeGatePreview(scene);
+const animator = makeAnimator();
+const vec = b => toThree([b.rx, b.ry, b.rz]);
+
+/* ---- readouts ---- */
+function update() {
+  state = normalize(state);
+  const b = bloch(state, N, 0);
+  sphere.set(b);
+  tip.position.copy(vec(b).normalize().multiplyScalar(b.len * sphere.r));
+  const labels = ['|0⟩', '|1⟩']; let html = '';
+  for (let i = 0; i < 2; i++) {
+    const p = cabs2(state[i]);
+    html += `<tr><td class="k">${labels[i]}</td><td class="amp">${fmtC(state[i])}</td>` +
+      `<td><span class="pbar" style="width:${(p * 60).toFixed(1)}px"></span> ${(p * 100).toFixed(0)}%</td></tr>`;
+  }
+  $('stateTbl').innerHTML = html;
+  $('stateName').textContent = classify();
+  $('theta').textContent = (Math.acos(Math.max(-1, Math.min(1, b.rz))) * 180 / Math.PI).toFixed(1) + '°';
+  $('phi').textContent = (((Math.atan2(b.ry, b.rx) * 180 / Math.PI) + 360) % 360).toFixed(1) + '°';
+  $('rlen').textContent = b.len.toFixed(3);
+  const d = density1(b);
+  $('mat').innerHTML = `<div>${z(d.r00).toFixed(3)}</div><div>${fmtC(d.r01)}</div>` +
+    `<div>${fmtC(cconj(d.r01))}</div><div>${z(d.r11).toFixed(3)}</div>`;
+  $('teach').innerHTML = `State <b>${classify()}</b> · the arrow always reaches the surface (|r⃗| = ${b.len.toFixed(2)}).`;
+}
+
+/* ---- gates, presets, replay ---- */
+const replay = makeReplay({
+  onRebuild: (base, ops) => { animator.clear(); state = base.map(a => C(a.re, a.im)); for (const op of ops) state = applyU(state, N, 0, op.U); update(); },
+  log: $('log'), pos: $('logPos'),
+});
+function gateOf(name) {
+  if (name === 'RX' || name === 'RY' || name === 'RZ')
+    return { U: rotGate(name[1], parseFloat($('ang').value) * Math.PI / 180), label: `${name[1]}(${$('ang').value}°)`, disp: name[0] + name[1].toLowerCase() };
+  return { U: gates[name], label: name, disp: name };
+}
+function doGate(name) {
+  const g = gateOf(name);
+  const b0 = bloch(state, N, 0), r0 = vec(b0), len0 = b0.len, aa = axisAngle(g.U);
+  replay.push({ U: g.U, label: g.label });           // state + readouts go final immediately
+  const r1 = vec(bloch(state, N, 0));
+  const { axis3, ang } = rotationToward(r0, r1, aa.axis, aa.theta);
+  if (aa.theta > 1e-4 && len0 > 1e-4) animator.start(e => {
+    const cur = r0.clone().applyAxisAngle(axis3, ang * e);
+    sphere.arrow.setDirection(cur.clone().normalize()); sphere.arrow.setLength(Math.max(len0 * sphere.r, 0.001), sphere.head[0], sphere.head[1]);
+    tip.position.copy(cur.clone().multiplyScalar(sphere.r));
+  });
+}
+const presets = { '0': [C(1), C(0)], '1': [C(0), C(1)], '+': [C(R2), C(R2)], '-': [C(R2), C(-R2)], '+i': [C(R2), C(0, R2)], '-i': [C(R2), C(0, -R2)] };
+const plabel = { '0': '|0⟩', '1': '|1⟩', '+': '|+⟩', '-': '|−⟩', '+i': '|+i⟩', '-i': '|−i⟩' };
+document.querySelectorAll('button.gate').forEach(b => {
+  b.addEventListener('click', () => doGate(b.dataset.g));
+  b.addEventListener('mouseenter', () => {
+    const g = gateOf(b.dataset.g), aa = axisAngle(g.U);
+    if (aa.theta < 1e-4) { preview.hide(); return; }
+    preview.show(sphere.group.position, aa.axis, aa.theta, g.disp, vec(bloch(state, N, 0)), sphere.r);
+  });
+  b.addEventListener('mouseleave', () => preview.hide());
+});
+document.querySelectorAll('button.preset').forEach(b => b.addEventListener('click', () => replay.setBase(presets[b.dataset.preset], plabel[b.dataset.preset])));
+$('ang').addEventListener('input', () => $('angv').textContent = $('ang').value + '°');
+$('rReset').addEventListener('click', () => replay.reset());
+$('rBack').addEventListener('click', () => replay.back());
+$('rFwd').addEventListener('click', () => replay.fwd());
+$('rCont').addEventListener('click', () => replay.cont());
+$('log').addEventListener('click', e => { const el = e.target.closest('.step'); if (el) replay.jump(+el.dataset.i); });
+
+attachResize($('stage'), renderer, camera);
+startLoop(renderer, scene, camera, controls, now => animator.tick(now));
+replay.setBase([C(1), C(0)], '|0⟩');
+</script>
+</body>
+</html>

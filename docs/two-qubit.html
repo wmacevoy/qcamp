@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bloch Spheres &amp; Entanglement — Interactive (WebGL)</title>
+<link rel="stylesheet" href="q.css" />
+<style>
+  :root{--a:#ff9f43}
+  #panel{flex:0 0 360px;max-width:360px}
+  button.q{flex:1}
+  button.q.on{background:#1c2a4a;border-color:var(--b);color:#cfe2ff}
+  button.preset{flex:1 1 22%}
+  button.two{flex:1 1 46%}
+  .bar{height:8px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:4px 0 10px}
+  .bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--b),var(--link))}
+  .two-col{display:flex;gap:12px}
+  .qbox{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}
+  .qbox h3{margin:0 0 6px;font-size:13px}
+  .qbox.A h3{color:var(--a)} .qbox.B h3{color:var(--b)}
+  details{margin-top:14px;font-size:12.5px;line-height:1.5;color:#c4cfe6}
+  details summary{cursor:pointer;color:var(--muted);font-weight:600}
+  details a{color:var(--b)}
+  details code{background:var(--panel2);padding:1px 4px;border-radius:4px}
+  /* correlation fingerprint */
+  .fprow{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12px}
+  .fplab{width:42px;font-family:ui-monospace,Menlo,Consolas,monospace;color:#cfe2ff}
+  .fptrack{position:relative;flex:1;height:14px;background:var(--panel2);border:1px solid var(--line);border-radius:7px}
+  .fptrack::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:#5a6aa0}
+  .fpfill{position:absolute;top:1px;bottom:1px;border-radius:5px;width:0;transition:.15s}
+  .fpval{width:46px;text-align:right;font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .fpnote{font-size:11px;color:var(--muted);margin-top:7px}
+  .fpnote b{color:#cfe2ff}
+  /* bell-state map */
+  .square{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .cell{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 6px;
+    text-align:center;cursor:pointer;transition:.12s}
+  .cell:hover{border-color:#46598f}
+  .cell.on{border-color:var(--link);background:#241a3a;box-shadow:0 0 0 1px var(--link),0 0 18px rgba(197,108,240,.45)}
+  .cell .bs{font-size:19px;font-weight:700}
+  .cell .op{font-size:11px;color:var(--muted);margin-top:2px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .sqlegend{display:flex;gap:14px;font-size:11px;color:var(--muted);margin-top:8px;justify-content:center}
+  .sqlegend b{color:#cfe2ff}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script src="qlib.js"></script>
+</head>
+<body>
+<nav class="qnav">
+  <span class="brand">Bloch &amp; Entanglement</span>
+  <a href="index.html">Overview</a>
+  <a href="one-qubit.html">1 qubit</a>
+  <a href="two-qubit.html" class="active">2 qubits</a>
+  <a href="three-qubit.html">3 qubits</a>
+  <span class="warn">2 qubits — representation still complete (with the coupling sphere)</span>
+</nav>
+<div id="app">
+  <div id="stage">
+    <canvas id="c"></canvas>
+    <div id="teach">Apply gates and watch the arrows.</div>
+    <div id="hint">drag to rotate · scroll to zoom · A (orange) &amp; B (blue) qubits · centre = coupling sphere</div>
+  </div>
+
+  <div id="panel">
+    <h1>Bloch Spheres &amp; Entanglement</h1>
+    <div class="sub">Two qubits · live reduced states · WebGL</div>
+
+    <h2>Presets</h2>
+    <div class="row">
+      <button class="preset" data-preset="00">|00⟩</button>
+      <button class="preset" data-preset="01">|01⟩</button>
+      <button class="preset" data-preset="10">|10⟩</button>
+      <button class="preset" data-preset="11">|11⟩</button>
+      <button class="preset" data-preset="phi+">Φ⁺</button>
+      <button class="preset" data-preset="phi-">Φ⁻</button>
+      <button class="preset" data-preset="psi+">Ψ⁺</button>
+      <button class="preset" data-preset="psi-">Ψ⁻</button>
+    </div>
+
+    <h2>Single-qubit gate → target</h2>
+    <div class="seg">
+      <button class="q on" id="qA">Q0 = A</button>
+      <button class="q" id="qB">Q1 = B</button>
+    </div>
+    <div class="row">
+      <button class="gate" data-g="H">H</button>
+      <button class="gate" data-g="X">X</button>
+      <button class="gate" data-g="Y">Y</button>
+      <button class="gate" data-g="Z">Z</button>
+      <button class="gate" data-g="S">S</button>
+      <button class="gate" data-g="T">T</button>
+      <button class="gate" data-g="SX">√X</button>
+    </div>
+    <div class="angwrap" style="margin-top:8px">
+      <input type="range" id="ang" min="0" max="360" value="90" />
+      <span id="angv">90°</span>
+    </div>
+    <div class="row">
+      <button class="gate" data-g="RX">Rx(θ)</button>
+      <button class="gate" data-g="RY">Ry(θ)</button>
+      <button class="gate" data-g="RZ">Rz(θ)</button>
+    </div>
+
+    <h2>Two-qubit gates</h2>
+    <div class="row">
+      <button class="two" data-g="CNOTAB">CNOT A→B</button>
+      <button class="two" data-g="CNOTBA">CNOT B→A</button>
+      <button class="two" data-g="CZ">CZ</button>
+      <button class="two" data-g="SWAP">SWAP</button>
+    </div>
+
+    <h2>State</h2>
+    <div class="name" id="stateName">|00⟩</div>
+    <table class="state" id="stateTbl"></table>
+
+    <h2>Entanglement</h2>
+    <div class="kv"><span>Concurrence C</span><span id="cVal">0.000</span></div>
+    <div class="bar"><i id="cBar"></i></div>
+    <div class="small" id="cExplain"></div>
+
+    <h2>Correlation fingerprint</h2>
+    <div class="small">Joint Pauli correlations ⟨P⊗P⟩ — what <em>defines</em> each Bell
+      state. For entangled states these hit ±1 while the single-qubit arrows sit at 0.</div>
+    <div class="fprow"><span class="fplab">⟨XX⟩</span><div class="fptrack"><i class="fpfill" id="fpXX"></i></div><span class="fpval" id="vXX">0.00</span></div>
+    <div class="fprow"><span class="fplab">⟨YY⟩</span><div class="fptrack"><i class="fpfill" id="fpYY"></i></div><span class="fpval" id="vYY">0.00</span></div>
+    <div class="fprow"><span class="fplab">⟨ZZ⟩</span><div class="fptrack"><i class="fpfill" id="fpZZ"></i></div><span class="fpval" id="vZZ">0.00</span></div>
+    <div class="fpnote" id="fpNote"></div>
+
+    <h2>Bell-state map</h2>
+    <div class="small">Hit one qubit with a Pauli to walk between the four Bell states
+      (the superdense-coding map). Click a cell to jump there; the highlight follows your gates.</div>
+    <div class="square">
+      <div class="cell" data-bell="phi+"><div class="bs">Φ⁺</div><div class="op">I</div></div>
+      <div class="cell" data-bell="phi-"><div class="bs">Φ⁻</div><div class="op">Z</div></div>
+      <div class="cell" data-bell="psi+"><div class="bs">Ψ⁺</div><div class="op">X</div></div>
+      <div class="cell" data-bell="psi-"><div class="bs">Ψ⁻</div><div class="op">Y = XZ</div></div>
+    </div>
+    <div class="sqlegend"><span><b>→</b> Z phase-flip</span><span><b>↓</b> X bit-flip</span><span><b>⤡</b> Y</span></div>
+
+    <h2>Reduced single-qubit states</h2>
+    <div class="two-col">
+      <div class="qbox A">
+        <h3>Qubit A (Q0)</h3>
+        <div class="kv"><span>|r⃗|</span><span id="rA">1.000</span></div>
+        <div class="kv"><span>purity</span><span id="pA">1.000</span></div>
+        <div class="mat" id="matA"></div>
+      </div>
+      <div class="qbox B">
+        <h3>Qubit B (Q1)</h3>
+        <div class="kv"><span>|r⃗|</span><span id="rB">1.000</span></div>
+        <div class="kv"><span>purity</span><span id="pB">1.000</span></div>
+        <div class="mat" id="matB"></div>
+      </div>
+    </div>
+
+    <h2>Gate log &amp; replay</h2>
+    <div class="replay">
+      <button id="rReset" title="to start">⏮</button>
+      <button id="rBack" title="step back">◀</button>
+      <button id="rFwd" title="step forward">▶</button>
+      <button id="rCont" title="to latest">⏭</button>
+      <span class="pos" id="logPos">0 / 0</span>
+    </div>
+    <div id="log"></div>
+    <div class="small" style="margin-top:6px">A preset starts a run; gates record onto it.
+      Step through with the controls, or click any step to jump there. Applying a gate from a
+      mid-point replaces what was ahead.</div>
+
+    <details>
+      <summary>What am I looking at? (the big idea)</summary>
+      <p>A Bloch sphere shows <em>one</em> qubit. The arrow (Bloch vector
+      <code>r⃗</code>) is the qubit's reduced state.</p>
+      <p><b>Separable</b> states → both arrows have length 1 (each qubit has a
+      definite state). <b>Entangled</b> states → the arrows <em>shrink</em>; a
+      maximally entangled <em>Bell state</em> puts both arrows at the
+      <em>center</em> (maximally mixed, <code>r⃗ = 0</code>).</p>
+      <p>The centre <b>coupling sphere</b> colours each measurement direction
+      <code>n̂</code> by the joint correlation
+      <code>E(n̂) = ⟨(n̂·σ)(n̂·σ)⟩</code>: <span style="color:#1de08a">green =
+      correlated</span>, <span style="color:#f0556a">red = anti-correlated</span>,
+      dim = uncorrelated. The surface also <b>bulges out where correlated and
+      pinches toward the centre where not</b>, so strength reads as shape. The
+      panel's ⟨XX⟩/⟨YY⟩/⟨ZZ⟩ are just <code>E</code> along the three coloured axis
+      pokes.</p>
+      <p>So the singlet <b>Ψ⁻</b> is a uniformly <em>red</em> round ball
+      (anti-correlated every direction — its rotational invariance), <b>Φ⁺</b> is a
+      vivid green ball with red caps, and a product state like <b>|00⟩</b> is a green
+      <em>dumbbell</em> along the z-axis only. A round, fully-bulged ball <em>while
+      the arrows vanish</em> = maximal entanglement. (Concurrence <code>C</code>
+      stays in the panel; <code>|r⃗| = √(1 − C²)</code>.)</p>
+      <p>Full notes: <a href="notes.html">rendered</a> ·
+      <a href="bloch-sphere-and-entanglement.md">raw .md</a></p>
+    </details>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+Q.initThree(THREE, OrbitControls);
+const { C, R2, gates, rotGate, axisAngle, applyU, cnot, cz, swap, normalize, bloch, density1, corrTensor, concurrence,
+  cmul, cconj, cabs2, fmtC, z, toThree, makeLabel, makeDynText, axisLine, setupScene, attachResize, startLoop,
+  makeBlochSphere, makeCouplingSphere, makeGatePreview, rotationToward, makeAnimator, makeReplay, V3 } = Q;
+const $ = id => document.getElementById(id);
+const N = 2;
+let state = [C(1), C(0), C(0), C(0)];
+let activeQubit = 0;
+
+const named = [
+  ['|00⟩', [C(1), C(0), C(0), C(0)]], ['|01⟩', [C(0), C(1), C(0), C(0)]],
+  ['|10⟩', [C(0), C(0), C(1), C(0)]], ['|11⟩', [C(0), C(0), C(0), C(1)]],
+  ['Bell Φ⁺', [C(R2), C(0), C(0), C(R2)]], ['Bell Φ⁻', [C(R2), C(0), C(0), C(-R2)]],
+  ['Bell Ψ⁺', [C(0), C(R2), C(R2), C(0)]], ['Bell Ψ⁻ (singlet)', [C(0), C(R2), C(-R2), C(0)]],
+];
+function classify() {
+  for (const [nm, v] of named) {
+    let re = 0, im = 0;
+    for (let i = 0; i < 4; i++) { const t = cmul(cconj(v[i]), state[i]); re += t.re; im += t.im; }
+    if (re * re + im * im > 0.9995) return nm;
+  }
+  return concurrence(state) < 1e-3 ? 'separable (product) state' : 'entangled state';
+}
+
+/* ---- scene ---- */
+const { renderer, scene, camera, controls } = setupScene($('c'), { cameraPos: [0, 1.4, 6.4], point: 80 });
+const sphA = makeBlochSphere(scene, { cx: -1.85, arrowColor: 0xff9f43, tag: 'A', tagColor: '#ff9f43', head: [0.2, 0.12] });
+const sphB = makeBlochSphere(scene, { cx: 1.85, arrowColor: 0x54a0ff, tag: 'B', tagColor: '#54a0ff', head: [0.2, 0.12] });
+const coupling = makeCouplingSphere(scene, { rad: 0.62 });
+const AX = 0.62 * 1.4;
+scene.add(axisLine(V3(-AX, 0, 0), V3(AX, 0, 0), 0xd06a6a));
+scene.add(axisLine(V3(0, -AX, 0), V3(0, AX, 0), 0x6f7fb5));
+scene.add(axisLine(V3(0, 0, -AX), V3(0, 0, AX), 0x69b07a));
+const coupTitle = makeLabel('coupling', '#9fb0d8', 0.5); coupTitle.position.set(0, 0.96, 0); scene.add(coupTitle);
+const coupNote = makeDynText({ scale: 2.0, color: '#cfe2ff', cw: 512, font: 34 }); coupNote.sprite.position.set(0, -1.02, 0); scene.add(coupNote.sprite);
+const preview = makeGatePreview(scene);
+const animator = makeAnimator();
+const vec = b => toThree([b.rx, b.ry, b.rz]);
+
+/* ---- readouts ---- */
+function setFP(fillId, valId, v) {
+  const fill = $(fillId), mag = Math.min(1, Math.abs(v));
+  fill.style.width = (mag * 50) + '%';
+  if (v >= 0) { fill.style.left = '50%'; fill.style.background = '#1dd1a1'; }
+  else { fill.style.left = (50 - mag * 50) + '%'; fill.style.background = '#ff6b6b'; }
+  $(valId).textContent = (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2);
+}
+function matHTML(b) {
+  const d = density1(b);
+  return `<div>${z(d.r00).toFixed(3)}</div><div>${fmtC(d.r01)}</div><div>${fmtC(cconj(d.r01))}</div><div>${z(d.r11).toFixed(3)}</div>`;
+}
+function update() {
+  state = normalize(state);
+  const A = bloch(state, N, 0), B = bloch(state, N, 1), c = concurrence(state);
+  sphA.set(A); sphB.set(B);
+  const labels = ['|00⟩', '|01⟩', '|10⟩', '|11⟩']; let html = '';
+  for (let i = 0; i < 4; i++) {
+    const p = cabs2(state[i]);
+    html += `<tr><td class="k">${labels[i]}</td><td class="amp">${fmtC(state[i])}</td>` +
+      `<td><span class="pbar" style="width:${(p * 60).toFixed(1)}px"></span> ${(p * 100).toFixed(0)}%</td></tr>`;
+  }
+  $('stateTbl').innerHTML = html;
+  const name = classify(); $('stateName').textContent = name;
+  $('cVal').textContent = c.toFixed(3); $('cBar').style.width = (c * 100) + '%';
+  $('rA').textContent = A.len.toFixed(3); $('rB').textContent = B.len.toFixed(3);
+  $('pA').textContent = ((1 + A.len * A.len) / 2).toFixed(3); $('pB').textContent = ((1 + B.len * B.len) / 2).toFixed(3);
+  $('matA').innerHTML = matHTML(A); $('matB').innerHTML = matHTML(B);
+
+  const T = corrTensor(state, N, 0, 1);
+  const cor = { xx: T[0][0], yy: T[1][1], zz: T[2][2] };
+  setFP('fpXX', 'vXX', cor.xx); setFP('fpYY', 'vYY', cor.yy); setFP('fpZZ', 'vZZ', cor.zz);
+  const sg = x => x > 0.98 ? '+' : x < -0.98 ? '−' : '·', pat = sg(cor.xx) + sg(cor.yy) + sg(cor.zz);
+  const fpMap = { '+−+': 'Φ⁺', '−++': 'Φ⁻', '++−': 'Ψ⁺', '−−−': 'Ψ⁻' };
+  $('fpNote').innerHTML = fpMap[pat]
+    ? `pattern <b>(${pat})</b> uniquely identifies <b>${fpMap[pat]}</b> — joint correlations ±1, local arrows 0.`
+    : 'partial / mixed correlations — not a Bell state.';
+  const cellOf = { 'Bell Φ⁺': 'phi+', 'Bell Φ⁻': 'phi-', 'Bell Ψ⁺': 'psi+', 'Bell Ψ⁻ (singlet)': 'psi-' }[name];
+  document.querySelectorAll('.cell').forEach(el => el.classList.toggle('on', el.dataset.bell === cellOf));
+
+  coupling.set(T);
+  coupNote.set(c < 0.02 ? 'classical — bulges on one axis only' : c > 0.98 ? 'maximally entangled — full round ball' : `partially entangled — C = ${c.toFixed(2)}`);
+
+  let t, e;
+  if (c < 0.02) { t = 'Both arrows full length → <b>separable</b>: each qubit has its own definite state.'; e = 'No entanglement. The two spheres tell the whole story.'; }
+  else if (c > 0.98) { t = 'Both arrows at the <b>center</b> → <b>maximally entangled</b>. All information lives in the correlation, not the parts.'; e = 'Each qubit alone is maximally mixed (|r⃗|=0). The pair is pure, but neither qubit is.'; }
+  else { t = `<b>Partially entangled</b> (C = ${c.toFixed(2)}) → arrows shrinking as |r⃗| = √(1 − C²).`; e = 'Knowledge is leaking from the individual qubits into their correlation.'; }
+  $('teach').innerHTML = t; $('cExplain').textContent = e;
+}
+
+/* ---- gates + replay ---- */
+function applyOp(s, op) {
+  if (op.kind === 1) return applyU(s, N, op.qubit, op.U);
+  if (op.op === 'CNOTAB') return cnot(s, N, 0, 1);
+  if (op.op === 'CNOTBA') return cnot(s, N, 1, 0);
+  if (op.op === 'CZ') return cz(s, N, 0, 1);
+  return swap(s, N, 0, 1);
+}
+const replay = makeReplay({
+  onRebuild: (base, ops) => { animator.clear(); state = base.map(a => C(a.re, a.im)); for (const op of ops) state = applyOp(state, op); update(); },
+  log: $('log'), pos: $('logPos'),
+});
+function doSingle(name) {
+  const tag = activeQubit === 0 ? 'A' : 'B';
+  let U, label;
+  if (name === 'RX' || name === 'RY' || name === 'RZ') { U = rotGate(name[1], parseFloat($('ang').value) * Math.PI / 180); label = `${name[1]}(${$('ang').value}°)·${tag}`; }
+  else { U = gates[name]; label = `${name}·${tag}`; }
+  const sph = activeQubit === 0 ? sphA : sphB;
+  const b0 = bloch(state, N, activeQubit), r0 = vec(b0), len0 = b0.len, aa = axisAngle(U);
+  replay.push({ kind: 1, qubit: activeQubit, U, label });
+  const r1 = vec(bloch(state, N, activeQubit));
+  const { axis3, ang } = rotationToward(r0, r1, aa.axis, aa.theta);
+  if (aa.theta > 1e-4 && len0 > 1e-4) animator.start(e => {
+    const cur = r0.clone().applyAxisAngle(axis3, ang * e);
+    sph.arrow.visible = true; sph.arrow.setDirection(cur.clone().normalize()); sph.arrow.setLength(Math.max(len0 * sph.r, 0.001), sph.head[0], sph.head[1]);
+  });
+}
+function doTwo(name) { const labels = { CNOTAB: 'CNOT A→B', CNOTBA: 'CNOT B→A', CZ: 'CZ', SWAP: 'SWAP' }; replay.push({ kind: 2, op: name, label: labels[name] }); }
+
+const presets = {
+  '00': [C(1), C(0), C(0), C(0)], '01': [C(0), C(1), C(0), C(0)], '10': [C(0), C(0), C(1), C(0)], '11': [C(0), C(0), C(0), C(1)],
+  'phi+': [C(R2), C(0), C(0), C(R2)], 'phi-': [C(R2), C(0), C(0), C(-R2)], 'psi+': [C(0), C(R2), C(R2), C(0)], 'psi-': [C(0), C(R2), C(-R2), C(0)],
+};
+const plabel = { '00': '|00⟩', '01': '|01⟩', '10': '|10⟩', '11': '|11⟩', 'phi+': 'Φ⁺', 'phi-': 'Φ⁻', 'psi+': 'Ψ⁺', 'psi-': 'Ψ⁻' };
+
+document.querySelectorAll('button.gate').forEach(b => {
+  b.addEventListener('click', () => doSingle(b.dataset.g));
+  b.addEventListener('mouseenter', () => {
+    const name = b.dataset.g;
+    const U = (name === 'RX' || name === 'RY' || name === 'RZ') ? rotGate(name[1], parseFloat($('ang').value) * Math.PI / 180) : gates[name];
+    const aa = axisAngle(U);
+    if (aa.theta < 1e-4) { preview.hide(); return; }
+    const disp = name.startsWith('R') ? name[0] + name[1].toLowerCase() : name, sph = activeQubit === 0 ? sphA : sphB;
+    preview.show(sph.group.position, aa.axis, aa.theta, disp, vec(bloch(state, N, activeQubit)), sph.r);
+  });
+  b.addEventListener('mouseleave', () => preview.hide());
+});
+document.querySelectorAll('button.two').forEach(b => b.addEventListener('click', () => doTwo(b.dataset.g)));
+$('qA').addEventListener('click', () => { activeQubit = 0; $('qA').classList.add('on'); $('qB').classList.remove('on'); });
+$('qB').addEventListener('click', () => { activeQubit = 1; $('qB').classList.add('on'); $('qA').classList.remove('on'); });
+$('ang').addEventListener('input', () => $('angv').textContent = $('ang').value + '°');
+$('rReset').addEventListener('click', () => replay.reset());
+$('rBack').addEventListener('click', () => replay.back());
+$('rFwd').addEventListener('click', () => replay.fwd());
+$('rCont').addEventListener('click', () => replay.cont());
+$('log').addEventListener('click', e => { const el = e.target.closest('.step'); if (el) replay.jump(+el.dataset.i); });
+document.querySelectorAll('.cell').forEach(el => el.addEventListener('click', () => replay.setBase(presets[el.dataset.bell], plabel[el.dataset.bell])));
+document.querySelectorAll('button.preset').forEach(b => b.addEventListener('click', () => replay.setBase(presets[b.dataset.preset], plabel[b.dataset.preset])));
+
+attachResize($('stage'), renderer, camera);
+startLoop(renderer, scene, camera, controls, now => animator.tick(now));
+replay.setBase([C(1), C(0), C(0), C(0)], '|00⟩');
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+/* q.css — shared styles for the Bloch & Entanglement camp pages.
+   Page-specific rules live in each page's own <style>. */
+:root{
+  --bg:#0b1020; --panel:#121a30; --panel2:#0e1526; --ink:#e8edf7; --muted:#8a98b8;
+  --line:#26324f; --b:#54a0ff; --good:#1dd1a1; --q:#ffd24a; --link:#c56cf0;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+body{display:flex;flex-direction:column;height:100vh}
+
+/* top navigation */
+.qnav{display:flex;align-items:center;gap:4px;padding:7px 14px;background:#0e1526;
+  border-bottom:1px solid #26324f;font-size:13px;flex:0 0 auto}
+.qnav .brand{font-weight:700;color:#cfe2ff;margin-right:12px}
+.qnav a{color:#8a98b8;text-decoration:none;padding:5px 10px;border-radius:7px}
+.qnav a:hover{background:#16203a;color:#cfe2ff}
+.qnav a.active{background:#1c2a4a;color:#cfe2ff}
+.qnav .warn{margin-left:auto;font-size:11px;color:var(--muted)}
+
+/* canvas stage + side panel */
+#app{display:flex;flex:1 1 auto;min-height:0;overflow:hidden}
+#stage{position:relative;flex:1 1 auto;min-width:0}
+#c{display:block;width:100%;height:100%}
+#teach{position:absolute;left:50%;top:14px;transform:translateX(-50%);max-width:92%;text-align:center;
+  background:rgba(10,16,32,.76);border:1px solid var(--line);border-radius:10px;padding:8px 16px;
+  font-size:14px;line-height:1.42;pointer-events:none}
+#teach b{color:var(--good)}
+#hint{position:absolute;left:12px;bottom:10px;color:var(--muted);font-size:12px}
+#panel{flex:0 0 350px;max-width:350px;background:var(--panel);border-left:1px solid var(--line);
+  overflow-y:auto;padding:16px 16px 40px}
+
+h1{font-size:16px;margin:0 0 2px}
+.sub{color:var(--muted);font-size:12px;margin-bottom:14px}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  margin:18px 0 8px;border-bottom:1px solid var(--line);padding-bottom:5px}
+
+/* buttons */
+.row{display:flex;flex-wrap:wrap;gap:6px}
+.seg{display:flex;gap:6px;margin-bottom:8px}
+button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;
+  padding:7px 10px;font-size:13px;cursor:pointer;font-weight:600;transition:.12s}
+button:hover{border-color:#46598f;background:#18223c}
+button:active{transform:translateY(1px)}
+button.gate{min-width:40px}
+
+/* readouts */
+.kv{display:flex;justify-content:space-between;font-size:13px;margin:3px 0}
+.kv span:last-child{font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,Consolas,monospace}
+table.state{width:100%;border-collapse:collapse;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+table.state td{padding:3px 4px;border-bottom:1px solid var(--line)}
+table.state td.k{color:var(--muted)} table.state td.amp{text-align:right}
+.pbar{display:inline-block;height:7px;border-radius:4px;background:var(--b);vertical-align:middle}
+.mat{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:var(--muted);
+  display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;margin-top:6px;border-left:2px solid var(--line);padding-left:8px}
+.name{font-size:15px;font-weight:700;text-align:center;padding:8px;background:var(--panel2);
+  border:1px solid var(--line);border-radius:8px;margin-bottom:6px}
+.small{font-size:11px;color:var(--muted)}
+input[type=range]{width:100%}
+.angwrap{display:flex;align-items:center;gap:8px}
+.angwrap span{font-variant-numeric:tabular-nums;width:46px;text-align:right;color:var(--muted)}
+
+/* gate log + replay */
+.replay{display:flex;gap:6px;margin-bottom:8px;align-items:center}
+.replay button{flex:1;font-size:14px;padding:6px 0}
+.replay .pos{flex:0 0 auto;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;padding:0 4px}
+#log{display:flex;flex-wrap:wrap;gap:5px;align-items:center;background:var(--panel2);
+  border:1px solid var(--line);border-radius:8px;padding:8px;min-height:34px;max-height:130px;overflow-y:auto}
+.step{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;padding:3px 7px;border-radius:6px;
+  border:1px solid var(--line);cursor:pointer;white-space:nowrap;color:var(--muted)}
+.step.done{color:#cfe2ff;border-color:#3a4f7a;background:#16203a}
+.step.pend{opacity:.42}
+.step.cur{border-color:var(--q);color:#fff;background:#33301a;box-shadow:0 0 0 1px var(--q)}

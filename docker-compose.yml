@@ -1,0 +1,11 @@
+services:
+  # Local preview of the static site, mirroring GitHub Pages "deploy from /docs".
+  # The docs/ folder is the web root, exactly as Pages serves it.
+  #   docker-compose up   ->   open http://localhost:8080/
+  docs:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./docs:/usr/share/nginx/html:ro
+    restart: unless-stopped
