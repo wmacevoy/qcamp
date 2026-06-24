@@ -14,6 +14,10 @@
   button{padding:8px 10px}
   button.preset{flex:1 1 44%}
   button.preset.on{border-color:var(--tri);background:#241a3a;color:#e7d4ff}
+  button.q{flex:1} button.q.on{background:#1c2a4a;border-color:var(--b);color:#cfe2ff}
+  button.ctrl{flex:1} button.ctrl.on{background:#241a3a;border-color:var(--tri);color:#e7d4ff}
+  button.ctrl:disabled{opacity:.3;cursor:not-allowed}
+  button.two{flex:1 1 30%}
   .name{margin:0 0 4px}
   .amps{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:var(--muted);
     text-align:center;margin-bottom:6px;word-break:break-word}
@@ -62,15 +66,75 @@
   </div>
   <div id="panel">
     <h1>Three Qubits</h1>
-    <div class="sub">the same toolkit — honestly applied</div>
+    <div class="sub">the same toolkit — now apply gates and watch it break</div>
 
-    <h2>States</h2>
+    <h2>Start from</h2>
     <div class="row">
       <button class="preset" data-preset="ghz">GHZ</button>
       <button class="preset" data-preset="w">W</button>
       <button class="preset" data-preset="000">|000⟩</button>
       <button class="preset" data-preset="ppp">|+++⟩</button>
     </div>
+
+    <h2>Target qubit (single-qubit gates)</h2>
+    <div class="seg">
+      <button class="q on" data-tgt="0">A</button>
+      <button class="q" data-tgt="1">B</button>
+      <button class="q" data-tgt="2">C</button>
+    </div>
+    <div class="row">
+      <button class="gate" data-g="I">I</button>
+      <button class="gate" data-g="H">H</button>
+      <button class="gate" data-g="X">X</button>
+      <button class="gate" data-g="Y">Y</button>
+      <button class="gate" data-g="Z">Z</button>
+    </div>
+    <div class="row">
+      <button class="gate" data-g="S">S</button>
+      <button class="gate" data-g="Sdg">S†</button>
+      <button class="gate" data-g="T">T</button>
+      <button class="gate" data-g="Tdg">T†</button>
+      <button class="gate" data-g="SX">√X</button>
+      <button class="gate" data-g="SXdg">√X†</button>
+    </div>
+    <div class="angwrap" style="margin-top:8px">
+      <input type="range" id="ang" min="0" max="360" value="90" />
+      <span id="angv">90°</span>
+    </div>
+    <div class="row">
+      <button class="gate" data-g="RX">Rx(θ)</button>
+      <button class="gate" data-g="RY">Ry(θ)</button>
+      <button class="gate" data-g="RZ">Rz(θ)</button>
+      <button class="gate" data-g="P">P(θ)</button>
+    </div>
+    <div class="urow">
+      <span>U(θ,φ,λ)°</span>
+      <input type="number" id="uTh" value="90" title="θ" />
+      <input type="number" id="uPh" value="0" title="φ" />
+      <input type="number" id="uLa" value="0" title="λ" />
+      <button class="gate" data-g="U">U</button>
+    </div>
+
+    <h2>Controls + multi-qubit gates</h2>
+    <div class="small">Mark controls (the qubit(s) the gate is conditioned on); the gate acts on the
+      <b>target</b> above.</div>
+    <div class="seg" style="margin-top:6px">
+      <button class="ctrl" data-ctrl="0">A</button>
+      <button class="ctrl" data-ctrl="1">B</button>
+      <button class="ctrl" data-ctrl="2">C</button>
+    </div>
+    <div class="row">
+      <button class="two" data-c="CX">C·X → target</button>
+      <button class="two" data-c="CZ">C·Z</button>
+      <button class="two" data-c="SWAP">SWAP</button>
+      <button class="two" data-c="RXX">Rxx(θ)</button>
+      <button class="two" data-c="RZZ">Rzz(θ)</button>
+    </div>
+    <div class="small" style="margin-top:6px"><b>C·X</b>: 0 controls = X, 1 = CNOT, 2 = <b>Toffoli (CCX)</b>.
+      <b>C·Z</b>: 1 = CZ, 2 = CCZ. SWAP / Rxx / Rzz act on target + the first control.
+      <span class="note">RCCX (relative-phase Toffoli) and RC3X (4 qubits) aren't shown.</span></div>
+
+    <h2>State</h2>
     <div class="name" id="stateName">GHZ</div>
     <div class="amps" id="amps"></div>
 
@@ -86,6 +150,19 @@
     <div id="budgets"></div>
     <div class="note" style="margin-top:6px"><code>τ<sub>q|rest</sub> = 1 − |r⃗<sub>q</sub>|²</code>
       splits into pairwise couplings + a genuinely tripartite remainder (the 3-tangle).</div>
+
+    <h2>Gate log &amp; replay</h2>
+    <div class="replay">
+      <button id="rReset" title="to start">⏮</button>
+      <button id="rBack" title="step back">◀</button>
+      <button id="rFwd" title="step forward">▶</button>
+      <button id="rCont" title="to latest">⏭</button>
+      <span class="pos" id="logPos">0 / 0</span>
+    </div>
+    <div id="log"></div>
+    <div class="small" style="margin-top:6px">Try: start <b>|000⟩</b>, then <b>H·A</b>,
+      <b>C·X</b> (control A → target B), <b>C·X</b> (control B → target C) to build GHZ — and watch τ₃
+      climb to 1 while every arrow stays at the centre.</div>
 
     <h2>Honest reckoning</h2>
     <div class="alt" id="reck"></div>
@@ -121,9 +198,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 Q.initThree(THREE, OrbitControls);
-const { C, R2, cabs2, bloch, corrTensor, tangle3, makeLabel, axisLine, setupScene, attachResize, startLoop, makeBlochSphere, makeCouplingSphere, V3 } = Q;
-const $ = id => document.getElementById(id);
-const N = 3, R3 = 1 / Math.sqrt(3), R8 = 1 / Math.sqrt(8);
+const { C, R2, gates, rotGate, pGate, uGate, rxxGate, rzzGate, axisAngle, applyU, applyU2, mcx, mcz, swap,
+  bloch, corrTensor, tangle3, cabs2, toThree, makeLabel, axisLine, setupScene, attachResize, startLoop,
+  makeBlochSphere, makeCouplingSphere, makeGatePreview, makeAnimator, rotationToward, makeReplay, V3 } = Q;
+const $ = id => document.getElementById(id), N = 3, R3 = 1 / Math.sqrt(3), R8 = 1 / Math.sqrt(8), QN = ['A', 'B', 'C'];
+const RAD = d => parseFloat(d) * Math.PI / 180;
 let state = new Array(8).fill(0).map(() => C(0));
 
 const presets = {
@@ -133,18 +212,6 @@ const presets = {
   ppp: (() => new Array(8).fill(0).map(() => C(R8)))(),
 };
 const pName = { ghz: 'GHZ', w: 'W', '000': '|000⟩', ppp: '|+++⟩' };
-const teachByPreset = {
-  ghz: '<b>BLIND SPOT.</b> Every arrow sits at the centre and every coupling sphere shows only a classical z-correlation — the picture looks barely entangled. Yet τ₃ = 1: this is <b>maximally entangled</b>. All of it lives in 3-body correlations no sphere or edge can show.',
-  w:   '<span class="ok">Here the picture works.</span> Arrows are partly raised and the couplings are genuinely entangled — W keeps its entanglement in the <span class="ok">pairs</span>, so τ₃ = 0 and nothing is hidden.',
-  '000': 'Product state. Arrows full, couplings empty, τ₃ = 0 — there is simply no entanglement to represent. The picture is honest here.',
-  ppp: 'Product state in the X basis (|+++⟩). Arrows point fully along x, no coupling, τ₃ = 0 — again nothing to miss.',
-};
-const reckByPreset = {
-  ghz: 'GHZ is the poster child: 1- and 2-body marginals <b>cannot distinguish</b> it from three independent fair coins with a shared bit. The exponential truth (8 amplitudes) collapses onto a handful of pairwise numbers — and the genuinely multipartite part vanishes from view.',
-  w:   'W is the friendly case: its entanglement is <b>monogamously shared</b> across the three pairs, so the coupling spheres faithfully carry it. This is the lucky exception, not the rule.',
-  '000': 'No entanglement at all — the spheres + couplings are trivially complete here.',
-  ppp: 'A product state. Complete, but only because there is nothing multipartite to lose.',
-};
 
 /* ---- scene: 3 Bloch spheres on a triangle + 3 edge coupling spheres ---- */
 const { renderer, scene, camera, controls } = setupScene($('c'), { cameraPos: [0, 0.15, 6.9], target: [0, 0.15, 0], ambient: 0.85 });
@@ -156,54 +223,144 @@ scene.add(axisLine(V3(PB[0], PB[1], 0), V3(PC[0], PC[1], 0), 0x2c3a5c, 0.6));
 const blA = makeBlochSphere(scene, { cx: PA[0], cy: PA[1], r: 0.7, arrowColor: 0xff9f43, tag: 'A', head: [0.16, 0.1], kets: false });
 const blB = makeBlochSphere(scene, { cx: PB[0], cy: PB[1], r: 0.7, arrowColor: 0x54a0ff, tag: 'B', head: [0.16, 0.1], kets: false });
 const blC = makeBlochSphere(scene, { cx: PC[0], cy: PC[1], r: 0.7, arrowColor: 0x4fe39a, tag: 'C', head: [0.16, 0.1], kets: false });
+const bls = [blA, blB, blC];
 function couplingAt(p, q, tag) {
   const m = mid(p, q), c = makeCouplingSphere(scene, { cx: m[0], cy: m[1], rad: 0.32, seg: 30 });
   const lab = makeLabel(tag, '#9fb0d8', 0.34); lab.position.set(m[0], m[1] + 0.48, 0); scene.add(lab);
   return c;
 }
 const cpAB = couplingAt(PA, PB, 'A·B'), cpAC = couplingAt(PA, PC, 'A·C'), cpBC = couplingAt(PB, PC, 'B·C');
+const preview = makeGatePreview(scene), animator = makeAnimator();
+const vec = b => toThree([b.rx, b.ry, b.rz]);
 
 /* ---- readouts ---- */
-let currentPreset = 'ghz';
 function update() {
-  const rA = bloch(state, N, 0), rB = bloch(state, N, 1), rC = bloch(state, N, 2);
-  blA.set(rA); blB.set(rB); blC.set(rC);
+  const r = [bloch(state, N, 0), bloch(state, N, 1), bloch(state, N, 2)];
+  bls.forEach((bl, i) => bl.set(r[i]));
   cpAB.set(corrTensor(state, N, 0, 1)); cpAC.set(corrTensor(state, N, 0, 2)); cpBC.set(corrTensor(state, N, 1, 2));
 
-  const t3 = tangle3(state);
+  const t3 = tangle3(state), minLen = Math.min(r[0].len, r[1].len, r[2].len);
   const t3el = $('tau3');
   t3el.textContent = `τ₃ (genuine tripartite, invisible to this view) = ${t3.toFixed(2)}`;
   t3el.className = 'big ' + (t3 > 0.5 ? 'hot' : 'cool');
   $('tau3note').textContent = t3 > 0.5 ? 'none of this entanglement appears on any sphere or coupling' : 'no hidden multipartite entanglement';
 
-  const tags = ['A', 'B', 'C'], rs = [rA, rB, rC];
-  $('budgets').innerHTML = tags.map((tg, i) => {
-    const tot = 1 - rs[i].len * rs[i].len, tri = Math.min(t3, tot), pair = Math.max(0, tot - tri);
+  $('budgets').innerHTML = QN.map((tg, i) => {
+    const tot = 1 - r[i].len * r[i].len, tri = Math.min(t3, tot), pair = Math.max(0, tot - tri);
     return `<div class="qrow"><span class="lab">${tg}|rest</span>` +
       `<div class="budget"><span class="tri" style="width:${(tri * 100).toFixed(1)}%"></span>` +
       `<span class="pair" style="width:${(pair * 100).toFixed(1)}%"></span></div>` +
       `<span class="val">${tot.toFixed(2)}</span></div>`;
   }).join('');
 
-  $('teach').innerHTML = teachByPreset[currentPreset];
-  $('reck').innerHTML = reckByPreset[currentPreset];
+  // teaching + reckoning, driven by the live state (works for any gate-built state)
+  let teach, reck;
+  if (t3 > 0.5) {
+    teach = `<b>BLIND SPOT.</b> Genuine 3-body entanglement (τ₃ = ${t3.toFixed(2)}) — yet the arrows and couplings look weak. None of it shows on any sphere or edge.`;
+    reck = '1- and 2-body marginals <b>cannot distinguish</b> this from classically-correlated coins. The exponential truth collapses onto a few pairwise numbers; the multipartite part vanishes from view.';
+  } else if (minLen > 0.985) {
+    teach = 'Separable / product state — arrows full, no entanglement to represent. The picture is honest here.';
+    reck = 'No entanglement — the spheres + couplings are trivially complete here.';
+  } else {
+    teach = `<span class="ok">The picture works here.</span> τ₃ = ${t3.toFixed(2)} (no hidden 3-body part) — what entanglement exists is carried <span class="ok">pairwise</span> by the couplings.`;
+    reck = 'The entanglement here is <b>shared pairwise</b>, so the coupling spheres carry it faithfully — the lucky case, not the rule.';
+  }
+  $('teach').innerHTML = teach; $('reck').innerHTML = reck;
 
   const ket = i => '|' + ((i >> 2) & 1) + ((i >> 1) & 1) + (i & 1) + '⟩';
   $('amps').textContent = state.map((a, i) => cabs2(a) > 1e-6 ? `${a.re < 0 || a.im < 0 ? '−' : ''}${Math.hypot(a.re, a.im).toFixed(3)}${ket(i)}` : null)
     .filter(Boolean).join('  +  ').replace(/\+  −/g, '−');
 }
-function setPreset(key) {
-  currentPreset = key;
-  state = presets[key].map(a => C(a.re, a.im));
-  $('stateName').textContent = pName[key];
-  document.querySelectorAll('button.preset').forEach(b => b.classList.toggle('on', b.dataset.preset === key));
-  update();
+
+/* ---- gate engine: target + controls, single- and multi-qubit, with replay ---- */
+let target = 0; const ctrls = new Set();
+function renderRoles() {
+  document.querySelectorAll('button[data-tgt]').forEach(b => b.classList.toggle('on', +b.dataset.tgt === target));
+  document.querySelectorAll('button[data-ctrl]').forEach(b => {
+    const q = +b.dataset.ctrl;
+    if (q === target) ctrls.delete(q);
+    b.disabled = q === target; b.classList.toggle('on', ctrls.has(q));
+  });
 }
-document.querySelectorAll('button.preset').forEach(b => b.addEventListener('click', () => setPreset(b.dataset.preset)));
+function gate1(name) {
+  if (name === 'RX' || name === 'RY' || name === 'RZ') return { U: rotGate(name[1], RAD($('ang').value)), disp: name[0] + name[1].toLowerCase(), tag: `${name[1]}(${$('ang').value}°)` };
+  if (name === 'P') return { U: pGate(RAD($('ang').value)), disp: 'P', tag: `P(${$('ang').value}°)` };
+  if (name === 'U') return { U: uGate(RAD($('uTh').value), RAD($('uPh').value), RAD($('uLa').value)), disp: 'U', tag: `U(${$('uTh').value},${$('uPh').value},${$('uLa').value})` };
+  const disp = { Sdg: 'S†', Tdg: 'T†', SXdg: '√X†' }[name] || name;
+  return { U: gates[name], disp, tag: disp };
+}
+function applyOp(s, op) {
+  if (op.kind === 1) return applyU(s, N, op.qubit, op.U);
+  if (op.kind === 'mcx') return mcx(s, N, op.controls, op.target);
+  if (op.kind === 'mcz') return mcz(s, N, op.qubits);
+  if (op.kind === 'swap') return swap(s, N, op.a, op.b);
+  if (op.kind === '2u') return applyU2(s, N, op.qi, op.qj, op.M);
+  return s;
+}
+const replay = makeReplay({
+  onRebuild: (base, ops) => { animator.clear(); state = base.map(a => C(a.re, a.im)); for (const op of ops) state = applyOp(state, op); update(); },
+  log: $('log'), pos: $('logPos'),
+});
+function doSingle(name) {
+  const g = gate1(name), sph = bls[target];
+  const b0 = bloch(state, N, target), r0 = vec(b0), len0 = b0.len, aa = axisAngle(g.U);
+  replay.push({ kind: 1, qubit: target, U: g.U, label: `${g.tag}·${QN[target]}` });
+  const r1 = vec(bloch(state, N, target));
+  const { axis3, ang } = rotationToward(r0, r1, aa.axis, aa.theta);
+  if (aa.theta > 1e-4 && len0 > 1e-4) animator.start(e => {
+    const cur = r0.clone().applyAxisAngle(axis3, ang * e);
+    sph.arrow.visible = true; sph.arrow.setDirection(cur.clone().normalize()); sph.arrow.setLength(Math.max(len0 * sph.r, 0.001), sph.head[0], sph.head[1]);
+  });
+}
+function doCtrl(name) {
+  const c = [...ctrls].sort(), nm = c.map(q => QN[q]).join(''), tn = QN[target];
+  if (name === 'CX') {
+    const label = c.length === 0 ? `X·${tn}` : c.length === 1 ? `CX ${nm}→${tn}` : `CCX ${nm}→${tn}`;
+    replay.push({ kind: 'mcx', controls: c, target, label });
+  } else if (name === 'CZ') {
+    const qs = [...c, target], all = qs.map(q => QN[q]).join('');
+    replay.push({ kind: 'mcz', qubits: qs, label: qs.length === 1 ? `Z·${tn}` : qs.length === 2 ? `CZ ${all}` : `CCZ ${all}` });
+  } else if (name === 'SWAP') {
+    if (!c.length) return; replay.push({ kind: 'swap', a: target, b: c[0], label: `SWAP ${tn}↔${QN[c[0]]}` });
+  } else if (name === 'RXX' || name === 'RZZ') {
+    if (!c.length) return;
+    const M = (name === 'RXX' ? rxxGate : rzzGate)(RAD($('ang').value));
+    replay.push({ kind: '2u', qi: target, qj: c[0], M, label: `${name}(${$('ang').value}°) ${tn}·${QN[c[0]]}` });
+  }
+}
+
+/* ---- wiring ---- */
+document.querySelectorAll('button.preset').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('button.preset').forEach(x => x.classList.toggle('on', x === b));
+  $('stateName').textContent = pName[b.dataset.preset];
+  replay.setBase(presets[b.dataset.preset], pName[b.dataset.preset]);
+}));
+document.querySelectorAll('button[data-tgt]').forEach(b => b.addEventListener('click', () => { target = +b.dataset.tgt; renderRoles(); }));
+document.querySelectorAll('button[data-ctrl]').forEach(b => b.addEventListener('click', () => { const q = +b.dataset.ctrl; if (q === target) return; ctrls.has(q) ? ctrls.delete(q) : ctrls.add(q); renderRoles(); }));
+document.querySelectorAll('button.gate').forEach(b => {
+  b.addEventListener('click', () => doSingle(b.dataset.g));
+  b.addEventListener('mouseenter', () => {
+    const g = gate1(b.dataset.g), aa = axisAngle(g.U);
+    if (aa.theta < 1e-4) { preview.hide(); return; }
+    const sph = bls[target];
+    preview.show(sph.group.position, aa.axis, aa.theta, g.disp, vec(bloch(state, N, target)), sph.r);
+  });
+  b.addEventListener('mouseleave', () => preview.hide());
+});
+document.querySelectorAll('button.two[data-c]').forEach(b => b.addEventListener('click', () => doCtrl(b.dataset.c)));
+$('ang').addEventListener('input', () => $('angv').textContent = $('ang').value + '°');
+$('rReset').addEventListener('click', () => replay.reset());
+$('rBack').addEventListener('click', () => replay.back());
+$('rFwd').addEventListener('click', () => replay.fwd());
+$('rCont').addEventListener('click', () => replay.cont());
+$('log').addEventListener('click', e => { const el = e.target.closest('.step'); if (el) replay.jump(+el.dataset.i); });
 
 attachResize($('stage'), renderer, camera);
-startLoop(renderer, scene, camera, controls);
-setPreset('ghz');
+startLoop(renderer, scene, camera, controls, now => animator.tick(now));
+renderRoles();
+document.querySelector('button[data-preset="ghz"]').classList.add('on');
+$('stateName').textContent = 'GHZ';
+replay.setBase(presets.ghz, 'GHZ');
 </script>
 </body>
 </html>

@@ -110,6 +110,18 @@
     }
     return out;
   }
+  // multi-controlled X: flip target where ALL controls are 1 (0 ctrl = X, 1 = CNOT, 2 = Toffoli/CCX)
+  function mcx(state, n, controls, target) {
+    const tm = 1 << (n - 1 - target), cmask = controls.reduce((m, c) => m | (1 << (n - 1 - c)), 0), out = state.slice();
+    for (let i = 0; i < state.length; i++) if ((i & cmask) === cmask && !(i & tm)) { const j = i | tm; out[i] = state[j]; out[j] = state[i]; }
+    return out;
+  }
+  // multi-controlled Z: phase −1 where ALL listed qubits are 1 (1 = Z, 2 = CZ, 3 = CCZ) — symmetric
+  function mcz(state, n, qubits) {
+    const mask = qubits.reduce((m, q) => m | (1 << (n - 1 - q)), 0), out = state.slice();
+    for (let i = 0; i < state.length; i++) if ((i & mask) === mask) out[i] = cmul(out[i], C(-1));
+    return out;
+  }
   // ⟨ψ| (Π ops) |ψ⟩, ops = [[qubit, Pauli2x2], ...]  (Hermitian → real)
   function expect(state, n, ops) {
     let phi = state;
@@ -341,7 +353,7 @@
   g.Q = {
     C, cadd, csub, cmul, cconj, cabs2, R2, z, fmtC,
     gates, rotGate, pGate, uGate, rxxGate, rzzGate, PAULI, axisAngle,
-    normalize, applyU, applyU2, cnot, cz, swap, expect, bloch, density1, corrTensor, concurrence, tangle3,
+    normalize, applyU, applyU2, mcx, mcz, cnot, cz, swap, expect, bloch, density1, corrTensor, concurrence, tangle3,
     initThree, toThree, perp, V3: (x, y, z) => new THREE.Vector3(x, y, z),
     makeLabel, makeDynText, axisLine, setupScene, attachResize, startLoop,
     makeBlochSphere, makeCouplingSphere, makeGatePreview, rotationToward, makeAnimator, makeReplay,

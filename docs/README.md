@@ -10,7 +10,7 @@ hosts as-is on GitHub Pages.
 | `index.html` | **Overview** — the progression, three cards | — |
 | `one-qubit.html` | **1 qubit** — a single Bloch sphere | complete & faithful (`|r|=1` always) |
 | `two-qubit.html` | **2 qubits** — two Bloch spheres + coupling sphere, Bell states, replay | complete *with the coupling sphere* |
-| `three-qubit.html` | **3 qubits** — GHZ vs W, the blind spot | **breaks** (multipartite entanglement invisible) |
+| `three-qubit.html` | **3 qubits** — interactive sandbox (single-qubit + CNOT/Toffoli/CZ/CCZ/SWAP/Rxx/Rzz); GHZ vs W blind spot, live τ₃ | **breaks** (multipartite entanglement invisible) |
 
 The arc mirrors a real fact: the Bloch sphere is a **one-qubit miracle**, and
 each added qubit costs the representation exactly one notch. Page 3 makes the
