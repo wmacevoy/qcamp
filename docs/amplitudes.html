@@ -17,6 +17,12 @@
   .sub{color:var(--muted);font-size:13px;margin:0 0 20px}
   h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
     margin:22px 0 8px;border-bottom:1px solid var(--line);padding-bottom:5px}
+  .rowcount{text-transform:none;letter-spacing:0;color:#cfe2ff;font-weight:700;font-size:13px;margin-left:6px}
+  #blochCompare{margin-top:8px}
+  #blochStage{position:relative;width:100%;height:240px;background:#0b1020;border:1px solid var(--line);border-radius:10px;overflow:hidden;touch-action:none}
+  #bcanvas{display:block;width:100%;height:100%}
+  #blochCompare .cap{font-size:12.5px;color:#c4cfe6;line-height:1.55;margin:8px 0 0}
+  #blochCompare .cap b{color:#cfe2ff}
   .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
   button,select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;
     padding:7px 11px;font-size:13px;cursor:pointer;font-weight:600}
@@ -60,6 +66,14 @@
   .note{font-size:13px;color:#c4cfe6;line-height:1.55;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:14px}
   .note b{color:#cfe2ff} .note code{background:#0b1020;padding:1px 5px;border-radius:4px}
   .recipe{background:#241a3a;border-color:#6f4bb0;color:#e7d4ff}
+  .measbtn{background:#10331f;border-color:#1d6b45;color:#7fe9c3}
+  .measbtn:hover{border-color:#1dd1a1;background:#14422a}
+  .normbtn{background:#0e1f33;border-color:#2c4a73;color:#aaccf5}
+  .normbtn:hover{border-color:#54a0ff;background:#13263d}
+  #tbody td.ph svg{cursor:grab;touch-action:none}
+  #tbody td.ph svg:active{cursor:grabbing}
+  .editnote{font-size:12px;color:var(--muted);margin:4px 0 0}
+  .editnote b{color:#cfe2ff}
   /* shared progression nav */
   .qnav{display:flex;align-items:center;gap:4px;padding:7px 14px;background:#0e1526;border-bottom:1px solid #26324f;font-size:13px;flex-wrap:wrap}
   .qnav .brand{font-weight:700;color:#cfe2ff;margin-right:12px}
@@ -68,6 +82,12 @@
   .qnav a.active{background:#1c2a4a;color:#cfe2ff}
   .qnav .warn{margin-left:auto;font-size:11px;color:#8a98b8}
 </style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
 <script src="qlib.js"></script>
 </head>
 <body>
@@ -96,10 +116,15 @@
       <button class="qn" data-n="1">1</button>
       <button class="qn on" data-n="2">2</button>
       <button class="qn" data-n="3">3</button>
+      <button class="qn" data-n="4">4</button>
+      <button class="qn" data-n="5">5</button>
+      <button class="qn" data-n="6">6</button>
     </span>
     <button id="reset">Reset |0…0⟩</button>
     <button class="recipe" id="rBell">▶ Bell recipe (H, CNOT)</button>
     <button class="recipe" id="rInt">▶ Interference (H, Z, H)</button>
+    <button class="measbtn" id="measure">⊙ measure</button>
+    <button class="normbtn" id="normalize">normalize</button>
   </div>
 
   <h2>Gates</h2>
@@ -118,8 +143,18 @@
     <button id="doCnot">apply CNOT</button>
   </div>
 
-  <h2>The state — every amplitude as an arrow</h2>
+  <div id="blochCompare">
+    <h2>The same state, as a Bloch sphere <span id="blochNote" class="rowcount"></span></h2>
+    <div id="blochStage"><canvas id="bcanvas"></canvas></div>
+    <p class="cap">The very same amplitudes, drawn the friendly way — each arrow is that qubit's own
+      state, <b>|0⟩</b> up, <b>|1⟩</b> down. Hit <b>Bell recipe</b> and watch both arrows shrink to the
+      centre: the spheres go blank exactly when the table below turns un-splittable. Past <b>2 qubits</b>
+      there's no honest sphere left — the table is all you've got. Drag to rotate.</p>
+  </div>
+
+  <h2>The state — every amplitude as an arrow <span id="rowcount" class="rowcount"></span></h2>
   <p class="stform">|ψ⟩ = Σ &nbsp;<span class="amp">√prob% ↺ phase</span> <span class="ketc">|outcome⟩</span>&nbsp; — one term per row, the same form the Complex page ends on</p>
+  <p class="editnote">Tip: <b>drag any arrow</b> to set its amplitude — length <em>and</em> phase. Edits can push the total off 100%; hit <b>normalize</b> to make it a valid quantum state again.</p>
   <table>
     <thead><tr><th>arrow</th><th>state &nbsp;·&nbsp; √prob% ↺ phase × outcome</th><th>probability = length²</th><th></th></tr></thead>
     <tbody id="tbody"></tbody>
@@ -132,16 +167,25 @@
     <b>Things to try.</b> Hit <b>Bell recipe</b>: watch two arrows appear and the table become
     <em>un-splittable</em>. Hit <b>Interference</b> (H, Z, H on one qubit): the |0⟩ arrow grows, then
     its two contributions point opposite and <b>cancel to zero</b> — that destructive cancellation,
-    impossible for probabilities, is the entire quantum edge. Flip <b>qubits</b> 1→2→3 and watch the
-    table <b>double</b> each time: that doubling is the exponential state space, in the flesh.
-    Finally, pick <b>on qubit</b> then <b>hover H</b>: the table colours into the <b>pairs</b> that
+    impossible for probabilities, is the entire quantum edge. Step <b>qubits</b> from <b>1 up to 6</b>
+    and watch the table <b>double</b> every time — 2, 4, 8, 16, 32, <b>64 rows</b> at six. That doubling
+    is the exponential state space in the flesh: a real machine's few hundred qubits would need more
+    rows than there are atoms in the universe — which is exactly why no fixed picture can hold it.
+    Next, pick <b>on qubit</b> then <b>hover H</b>: the table colours into the <b>pairs</b> that
     gate mixes — the same <code>(A+B, A−B)/√2</code> two-arrow move on every pair that differs only
     in that bit, blind to all the others. That locality is why one little rule drives an exponential table.
+    Finally, hit <b>measure</b>: the table gambles on those probabilities and <b>collapses</b> to a single
+    outcome — amplitude <b>1</b> on the winner, 0 everywhere else (and the Bloch arrows snap to match).
+    That collapse is the one place randomness enters.
   </div>
 </div>
 
-<script>
-const { C, cmul, csub, cadd, cabs2, fmtC, gates, applyU, cnot, bloch, concurrence } = Q;
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+Q.initThree(THREE, OrbitControls);
+const { C, cmul, csub, cadd, cabs2, fmtC, gates, applyU, cnot, bloch, concurrence,
+  setupScene, makeBlochSphere, attachResize, startLoop } = Q;
 const $ = id => document.getElementById(id);
 let n = 2, target = 0;
 let state = mk(2);
@@ -150,6 +194,7 @@ let hview = null;                                   // which qubit's H pairing i
 
 function mk(nn) { const s = new Array(1 << nn).fill(0).map(() => C(0)); s[0] = C(1); return s; }
 const ket = i => '|' + i.toString(2).padStart(n, '0') + '⟩';
+const SUP = ['', '¹', '²', '³', '⁴', '⁵', '⁶'];     // 2ⁿ row-count badge
 
 function phasor(a, R = 24) {
   const mag = Math.hypot(a.re, a.im), ph = Math.atan2(a.im, a.re);
@@ -173,18 +218,52 @@ function ampPolar(a) {                               // amplitude as √(prob%) 
   return `√${(p * 100).toFixed(0)}% ↺ ${ph.toFixed(1)}°`;
 }
 
+/* ---- Bloch-sphere comparison (only an honest picture for n ≤ 2) ---- */
+let bScene = null, bSpheres = [];
+function initBloch() {                               // degrade gracefully if WebGL is unavailable
+  try {
+    bScene = setupScene($('bcanvas'), { cameraPos: [0, 0.5, 5.6], bg: 0x0b1020, ambient: 0.9, point: 60 });
+    attachResize($('blochStage'), bScene.renderer, bScene.camera);
+    startLoop(bScene.renderer, bScene.scene, bScene.camera, bScene.controls);
+  } catch (e) { bScene = null; }
+}
+function buildBloch() {                              // (re)create the sphere(s) for the current n
+  bSpheres.forEach(sp => bScene.scene.remove(sp.group));
+  bSpheres = [];
+  if (n === 1) {
+    bSpheres.push(makeBlochSphere(bScene.scene, { cx: 0, r: 1, arrowColor: 0xffd24a, tag: 'q0', tagColor: '#ffd24a' }));
+    bScene.camera.position.set(0, 0.4, 3.7);
+  } else if (n === 2) {
+    bSpheres.push(makeBlochSphere(bScene.scene, { cx: -1.5, r: 1, arrowColor: 0xff9f43, tag: 'q0', tagColor: '#ff9f43' }));
+    bSpheres.push(makeBlochSphere(bScene.scene, { cx: 1.5, r: 1, arrowColor: 0x54a0ff, tag: 'q1', tagColor: '#9fc6ff' }));
+    bScene.camera.position.set(0, 0.5, 5.6);
+  }
+  bScene.controls.target.set(0, 0, 0); bScene.controls.update();
+}
+function syncBloch() {                               // show + rebuild on a qubit-count change, hide past 2
+  const show = bScene && n <= 2;
+  $('blochCompare').style.display = show ? '' : 'none';
+  if (show) { buildBloch(); window.dispatchEvent(new Event('resize')); }
+}
+function updateBloch() {                             // point each arrow at its reduced Bloch vector
+  if (!bScene || n > 2) return;
+  for (let q = 0; q < bSpheres.length; q++) bSpheres[q].set(bloch(state, n, q));
+  $('blochNote').textContent = n === 1 ? '1 qubit — the whole truth' : '2 qubits — goes blank when entangled';
+}
+
 function render() {
   let html = '';
   for (let i = 0; i < state.length; i++) {
     const a = state[i], p = cabs2(a);
     const changed = prev && (Math.abs(prev[i].re - a.re) > 1e-9 || Math.abs(prev[i].im - a.im) > 1e-9);
     html += `<tr class="${changed ? 'flash' : ''}">` +
-      `<td class="ph">${phasor(a)}</td>` +
+      `<td class="ph" data-i="${i}">${phasor(a)}</td>` +
       `<td class="state"><span class="amp">${ampPolar(a)}</span><span class="ketc">${ket(i)}</span></td>` +
       `<td><div class="pbar"><i style="width:${(p * 100).toFixed(1)}%"></i></div></td>` +
       `<td class="prob">${(p * 100).toFixed(0)}%</td></tr>`;
   }
   $('tbody').innerHTML = html;
+  $('rowcount').textContent = `${n} qubit${n > 1 ? 's' : ''} → 2${SUP[n]} = ${state.length} rows`;
 
   // entanglement / factor verdict
   const lens = []; for (let q = 0; q < n; q++) lens.push(bloch(state, n, q).len);
@@ -199,6 +278,7 @@ function render() {
   if (product) { v.className = 'verdict sep'; v.innerHTML = body + `<b class="good">✓ Separable</b> — this is just ${n} independent qubit${n > 1 ? 's' : ''}, no entanglement.`; }
   else { v.className = 'verdict ent'; v.innerHTML = body + `<b class="bad">✗ Cannot factor</b> — at least one qubit has no state of its own. <b>This is entanglement</b>${n === 2 ? ` (concurrence ${concurrence(state).toFixed(2)})` : ''}.`; }
   drawHView();
+  updateBloch();
 }
 
 function commit(newState) { prev = state.map(a => C(a.re, a.im)); state = newState; render(); }
@@ -251,7 +331,7 @@ function rebuildSelectors() {
   $('ctrl').innerHTML = opt(0); $('targ').innerHTML = opt(n > 1 ? 1 : 0);
   $('cnotRow').style.display = n > 1 ? 'flex' : 'none';
 }
-function setN(nn) { n = nn; target = 0; hview = null; document.querySelectorAll('.qn').forEach(b => b.classList.toggle('on', +b.dataset.n === nn)); state = mk(n); prev = null; rebuildSelectors(); render(); }
+function setN(nn) { n = nn; target = 0; hview = null; document.querySelectorAll('.qn').forEach(b => b.classList.toggle('on', +b.dataset.n === nn)); state = mk(n); prev = null; rebuildSelectors(); syncBloch(); render(); }
 
 document.querySelectorAll('.qn').forEach(b => b.addEventListener('click', () => setN(+b.dataset.n)));
 document.querySelectorAll('.gate').forEach(b => b.addEventListener('click', () => commit(applyU(state, n, target, gates[b.dataset.g]))));
@@ -269,6 +349,42 @@ $('rBell').addEventListener('click', () => { if (n < 2) setN(2); state = mk(n); 
 $('rInt').addEventListener('click', () => { state = mk(n); prev = null; render();
   runSteps([() => commit(applyU(state, n, 0, gates.H)), () => commit(applyU(state, n, 0, gates.Z)), () => commit(applyU(state, n, 0, gates.H))]); });
 
+function measure() {                                // collapse: draw an outcome by its probability, set amplitude 1 there
+  const probs = state.map(a => cabs2(a)), total = probs.reduce((s, p) => s + p, 0) || 1;
+  let r = Math.random() * total, win = state.length - 1;
+  for (let i = 0; i < state.length; i++) { r -= probs[i]; if (r <= 1e-12) { win = i; break; } }
+  commit(state.map((_, i) => C(i === win ? 1 : 0)));
+}
+$('measure').addEventListener('click', measure);
+
+/* ---- direct editing: drag a phasor to set its amplitude; normalize to rescale ---- */
+let dragAmp = null;
+function ampFromPointer(e, rect) {                  // pointer → complex amplitude (length ≤ 1, any phase)
+  const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+  const dx = e.clientX - cx, dy = cy - e.clientY, unit = rect.width / 2 - 4 || 1;
+  const mag = Math.min(1, Math.hypot(dx, dy) / unit), ang = Math.atan2(dy, dx);
+  return C(mag * Math.cos(ang), mag * Math.sin(ang));
+}
+$('tbody').addEventListener('pointerdown', e => {
+  const td = e.target.closest('td.ph'), svg = td && td.querySelector('svg'); if (!svg) return;
+  dragAmp = +td.dataset.i; prev = null;
+  state[dragAmp] = ampFromPointer(e, svg.getBoundingClientRect()); render(); e.preventDefault();
+});
+window.addEventListener('pointermove', e => {
+  if (dragAmp === null) return;
+  const row = $('tbody').rows[dragAmp], svg = row && row.cells[0].querySelector('svg');
+  if (svg) { state[dragAmp] = ampFromPointer(e, svg.getBoundingClientRect()); render(); }
+});
+window.addEventListener('pointerup', () => { dragAmp = null; });
+
+function normalize() {                              // rescale so Σ|amp|² = 1 (probabilities sum to 100%)
+  const total = state.reduce((s, a) => s + cabs2(a), 0);
+  state = total < 1e-12 ? mk(n) : state.map(a => C(a.re / Math.sqrt(total), a.im / Math.sqrt(total)));
+  prev = null; render();
+}
+$('normalize').addEventListener('click', normalize);
+
+initBloch(); syncBloch();
 rebuildSelectors(); render();
 </script>
 </body>
