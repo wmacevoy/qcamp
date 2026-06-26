@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Not Very Complex Numbers</title>
+<style>
+  :root{--bg:#0b1020;--panel:#121a30;--panel2:#0e1526;--ink:#e8edf7;--muted:#8a98b8;--line:#26324f;
+    --z1:#54a0ff;--z2:#4fe39a;--res:#ffd24a;--accent:#c56cf0}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 20px 70px}
+  h1{font-size:23px;margin:0 0 4px}
+  .lede{color:#c4cfe6;max-width:720px;margin:0 0 6px}
+  .lede b{color:#fff} .lede code{background:#0b1020;padding:1px 6px;border-radius:5px;font-size:.95em}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .tabs button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:9px;
+    padding:8px 14px;font-size:15px;cursor:pointer;font-weight:700}
+  .tabs button:hover{border-color:#46598f}
+  .tabs button.on{background:#1c2a4a;border-color:var(--z1);color:#cfe2ff}
+  .main{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+  .plane{flex:0 0 460px;max-width:100%}
+  svg{width:100%;height:auto;touch-action:none;background:#0a0f1e;border:1px solid var(--line);border-radius:12px}
+  .panel{flex:1;min-width:280px}
+  .read{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+  .rdcard{background:var(--panel2);border:1px solid var(--line);border-left-width:4px;border-radius:9px;padding:9px 12px}
+  .rdcard .lbl{font-size:12px;color:var(--muted);font-weight:600}
+  .rdcard .val{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;margin-top:2px}
+  .rdcard.z1{border-left-color:var(--z1)} .rdcard.z2{border-left-color:var(--z2)} .rdcard.res{border-left-color:var(--res)}
+  .rule{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.6;color:#dbe4f5}
+  .rule b{color:#fff} .rule .q{color:#9fd0ff} .rule code{background:#0b1020;padding:1px 6px;border-radius:5px;font-family:ui-monospace,monospace}
+  .aside{margin-top:10px;font-size:12.5px;color:var(--muted);background:#0e1526;border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:9px 12px;line-height:1.55}
+  .aside b{color:#cfe2ff} .aside code{background:#0b1020;padding:1px 6px;border-radius:5px;color:#e8edf7;font-family:ui-monospace,monospace}
+  .opts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;font-size:13px;color:var(--muted)}
+  .opts label{display:flex;align-items:center;gap:5px;cursor:pointer}
+  .chip{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:5px 9px;font-size:12px;cursor:pointer;font-weight:600}
+  .chip:hover{border-color:#46598f}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  .chip.on{background:#1c2a4a;border-color:var(--z1);color:#cfe2ff}
+  .rowbtns{display:flex;gap:8px;margin:1px 0 3px}
+  .rowbtns button{background:var(--panel2);border:1px solid var(--line);color:#cfe2ff;border-radius:8px;padding:6px 11px;font-size:12.5px;cursor:pointer;font-weight:600}
+  .rowbtns button:hover{border-color:var(--z2)}
+  .cardrow{display:flex;align-items:stretch;gap:8px}
+  .cardrow .rdcard{flex:1}
+  .negbtn{background:var(--panel2);border:1px solid var(--line);color:#cfe2ff;border-radius:9px;padding:0 11px;font-size:13px;cursor:pointer;font-weight:700;white-space:nowrap;display:flex;align-items:center}
+  .negbtn:hover{border-color:var(--res);color:var(--res)}
+  .lessons{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 14px;padding:8px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+  .lessons .nav{background:#1c2a4a;border:1px solid var(--line);color:#cfe2ff;border-radius:7px;padding:5px 11px;font-size:14px;cursor:pointer;font-weight:700}
+  .lessons .nav:disabled{opacity:.35;cursor:default}
+  .lessons .title{font-size:13px;color:var(--muted);margin:0 6px 0 2px} .lessons .title b{color:#cfe2ff}
+  .lounge{margin-top:18px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:0 14px}
+  .lounge summary{cursor:pointer;padding:12px 2px;font-weight:700;color:#cfe2ff;font-size:14px;list-style:none}
+  .lounge summary::-webkit-details-marker{display:none}
+  .lounge summary::before{content:'▸ ';color:var(--accent)} .lounge[open] summary::before{content:'▾ '}
+  .lounge[open] summary{border-bottom:1px solid var(--line)}
+  .lounge .body{padding:4px 2px 14px;color:#c4cfe6;font-size:13.5px;line-height:1.6}
+  .lounge .body p{margin:11px 0} .lounge .body b{color:#cfe2ff} .lounge .body i{color:#9fd0ff;font-style:normal}
+  .lounge .body code{background:#0b1020;padding:1px 6px;border-radius:5px;font-family:ui-monospace,monospace}
+  /* shared progression nav */
+  .qnav{display:flex;align-items:center;gap:4px;padding:7px 14px;background:#0e1526;border-bottom:1px solid #26324f;font-size:13px;flex-wrap:wrap}
+  .qnav .brand{font-weight:700;color:#cfe2ff;margin-right:12px}
+  .qnav a{color:#8a98b8;text-decoration:none;padding:5px 10px;border-radius:7px}
+  .qnav a:hover{background:#16203a;color:#cfe2ff}
+  .qnav a.active{background:#1c2a4a;color:#cfe2ff}
+  .qnav .warn{margin-left:auto;font-size:11px;color:#8a98b8}
+</style>
+</head>
+<body>
+<nav class="qnav">
+  <span class="brand">Bloch &amp; Entanglement</span>
+  <a href="index.html">Overview</a>
+  <a href="one-qubit.html">1 qubit</a>
+  <a href="two-qubit.html">2 qubits</a>
+  <a href="three-qubit.html">3 qubits</a>
+  <a href="complex.html" class="active">Complex</a>
+  <a href="amplitudes.html">Amplitudes</a>
+  <span class="warn">complex numbers — the algebra behind every amplitude</span>
+</nav>
+<div class="wrap">
+  <h1>Not Very Complex Numbers</h1>
+  <p class="lede">A complex number is <b>just a point on a plane</b>. Two names for the same point:
+    <code>x + i y</code> — go right x, up y — or <code>r ↺ θ°</code> — length r, then <b>turn θ°
+    anti-clockwise</b> from <b>directly right</b> (the <code>+1</code> direction) toward <b>straight
+    up</b> (the <code>+i</code> direction). <b>Drag the tips.</b></p>
+  <p class="sub">the algebra of the amplitude-arrows</p>
+
+  <div class="tabs" id="tabs">
+    <button data-m="point" class="on">a point</button>
+    <button data-m="add">+ add</button>
+    <button data-m="sub">− subtract</button>
+    <button data-m="mul">× multiply</button>
+    <button data-m="div">÷ divide</button>
+  </div>
+
+  <div id="lessons" class="lessons"></div>
+
+  <div class="main">
+    <div class="plane"><svg id="svg" viewBox="0 0 460 460"></svg></div>
+    <div class="panel">
+      <div class="opts" id="repsRow" style="margin-top:0">show:
+        <label><input type="checkbox" data-rep="rect" checked /> x + i y</label>
+        <label><input type="checkbox" data-rep="deg" checked /> r ↺ θ°</label>
+        <label><input type="checkbox" data-rep="rad" /> r ↺ θ π</label>
+        <label><input type="checkbox" data-rep="sqrt" /> √(r²)</label>
+      </div>
+      <div class="read" id="read"></div>
+      <div class="rule" id="rule"></div>
+      <div class="aside" id="aside"></div>
+      <div class="opts">
+        <span style="margin-right:1px">snap to</span><label><input type="checkbox" id="snapRect" checked /> rectangular</label><label><input type="checkbox" id="snapCirc" checked /> circular</label>
+        <span id="presets"></span>
+      </div>
+      <div class="hint">Tip: drag the circle at the tip — blue (and green, for two-number operations). The amber arrow is the answer.</div>
+    </div>
+  </div>
+
+  <details id="lounge" class="lounge">
+    <summary>Teachers' lounge — take it to paper</summary>
+    <div class="body">
+      <p><b>Ruler &amp; protractor</b> (no formulas needed). Print the plane. Pick a point and measure its length <i>r</i> with a ruler and its angle <i>θ</i> with a protractor — anti-clockwise from the <code>+1</code> line. Do your measurements match the readout? Where does measuring start to get hard?</p>
+      <p><b>Pythagoras.</b> The two dashed legs are exactly <i>x</i> and <i>y</i>, and the arrow is the hypotenuse. So how could you get <i>r</i> from <i>x</i> and <i>y</i> with <b>no ruler at all</b>? Test your idea on <code>3 + 4i</code>, then on <code>1 + i</code>. (Hint: it's the theorem with the squares.)</p>
+      <p><b>Trigonometry.</b> A point carries four numbers — <i>x, y, r, θ</i> — but only <b>two</b> are ever free; the other two follow. Which ratio turns an angle into <i>x</i> and <i>y</i>? Going the other way, which ratio gives <i>θ</i> from <i>x</i> and <i>y</i>, and which “inverse” key on the calculator finishes the job? (Hints only — let them find the formulas.)</p>
+    </div>
+  </details>
+</div>
+
+<script>
+const CX = 230, CY = 230, D5 = 5 * Math.PI / 180;
+let GMAX = 5;                                  // grid half-range: ±5 normally, ±1 in the prob lesson
+const S = () => CX / GMAX, X = x => CX + x * S(), Y = y => CY - y * S();   // px per unit (mode-dependent)
+let z1 = { x: 3, y: 4 }, z2 = { x: 0.8, y: 0.6 }, mode = 'point', snapRect = true, snapCirc = true, drag = null;
+const lessonIdx = { point: 0, add: 0, sub: 0, mul: 0, div: 0 };   // current lesson per mode
+let reps = { rect: true, deg: true, rad: false, sqrt: false };    // which names the point readout shows
+const svg = document.getElementById('svg');
+
+/* ---- complex helpers (degrees) ---- */
+const r = z => Math.hypot(z.x, z.y);
+const deg = z => ((Math.atan2(z.y, z.x) * 180 / Math.PI) % 360 + 360) % 360;
+const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y });
+const sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y });
+const mul = (a, b) => ({ x: a.x * b.x - a.y * b.y, y: a.x * b.y + a.y * b.x });
+const div = (a, b) => { const d = b.x * b.x + b.y * b.y; return d < 1e-9 ? null : { x: (a.x * b.x + a.y * b.y) / d, y: (a.y * b.x - a.x * b.y) / d }; };
+const inv = z => div({ x: 1, y: 0 }, z) || z;     // 1/z (reciprocal: 1/r, −θ); unchanged if z = 0
+const f = v => { const n = Math.round((Math.abs(v) < 5e-3 ? 0 : v) * 100) / 100, s = n.toString(); return s[0] === '-' ? '−' + s.slice(1) : s; };   // smart: drop trailing .00, Unicode minus
+const fdeg = v => { const s = (Math.round(v * 10) / 10).toFixed(1); return (s[0] === '-' ? '−' + s.slice(1) : s) + '°'; };   // 1 decimal (continuous, not 360 steps)
+function rect(z) {                                // full simplification: drop zero terms and unit coefficients
+  const x = Math.abs(z.x) < 5e-3 ? 0 : z.x, y = Math.abs(z.y) < 5e-3 ? 0 : z.y;
+  if (x === 0 && y === 0) return '0';
+  let s = x !== 0 ? f(x) : '';
+  if (y !== 0) {
+    const coef = Math.abs(Math.abs(y) - 1) < 5e-3 ? '' : f(Math.abs(y));   // ±1 → just i
+    s += x === 0 ? (y < 0 ? '−' : '') + coef + 'i' : (y < 0 ? ' − ' : ' + ') + coef + 'i';
+  }
+  return s;
+}
+const polar = z => r(z) < 0.04 ? '0 ↺ —' : `${f(r(z))} ↺ ${fdeg(deg(z))}`;   // origin has no angle
+const fpi = z => `${Math.round(deg(z) / 180 * 1000) / 1000}π`;                // angle as a fixed factor of π (θ°/180)
+
+/* ---- svg drawing ---- */
+function arrow(a, b, color, w = 3, dash = '') {
+  const ax = X(a.x), ay = Y(a.y), bx = X(b.x), by = Y(b.y);
+  const ang = Math.atan2(by - ay, bx - ax), h = 11, wdt = 6;
+  const tip = `${bx},${by} ${bx - h * Math.cos(ang) + wdt * Math.sin(ang)},${by - h * Math.sin(ang) - wdt * Math.cos(ang)} ${bx - h * Math.cos(ang) - wdt * Math.sin(ang)},${by - h * Math.sin(ang) + wdt * Math.cos(ang)}`;
+  const len = Math.hypot(bx - ax, by - ay);
+  return (len < 3 ? '' : `<line x1="${ax}" y1="${ay}" x2="${bx - 7 * Math.cos(ang)}" y2="${by - 7 * Math.sin(ang)}" stroke="${color}" stroke-width="${w}" stroke-linecap="round" ${dash}/>` +
+    `<polygon points="${tip}" fill="${color}"/>`);
+}
+function dot(z, color, rad = 7) { return `<circle cx="${X(z.x)}" cy="${Y(z.y)}" r="${rad}" fill="${color}"/>`; }
+function dline(a, b, color) { return `<line x1="${X(a.x)}" y1="${Y(a.y)}" x2="${X(b.x)}" y2="${Y(b.y)}" stroke="${color}" stroke-width="1.5" stroke-dasharray="4 4"/>`; }
+const arcR = z => Math.max(0.4, Math.min(1.0, 0.5 * r(z)));     // angle-arc radius (units); scales with length
+function arc(z, color) {                          // sweep counter-clockwise the FULL positive angle (270° = ¾ around)
+  const th = deg(z) * Math.PI / 180, R = arcR(z), n = Math.max(6, Math.round(deg(z) / 5)), pts = [];
+  for (let i = 0; i <= n; i++) { const a = th * i / n; pts.push(`${X(R * Math.cos(a)).toFixed(1)},${Y(R * Math.sin(a)).toFixed(1)}`); }
+  return `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="1.7"/>`;
+}
+function txt(px, py, s, color, anchor = 'middle', size = 13) {   // labelled text with a dark halo for legibility
+  return `<text x="${px.toFixed(1)}" y="${py.toFixed(1)}" fill="${color}" text-anchor="${anchor}" font-size="${size}" font-weight="600" paint-order="stroke" stroke="#0a0f1e" stroke-width="3.5" stroke-linejoin="round">${s}</text>`;
+}
+function pointLabels(z) {                          // each label appears only when a rep that carries it is ticked
+  if (r(z) < 0.1) return '';
+  const R = r(z), prob = PROB();
+  let s = '';
+  if (reps.rect) {                                  // x + i y → the x =, y = leg labels
+    s += txt(X(z.x / 2), CY + (z.y >= 0 ? 34 : -8), `x = ${f(z.x)}`, '#8fa6d8');   // below the tick row, clear of axis numbers
+    s += txt(X(z.x) + (z.x >= 0 ? 9 : -9), Y(z.y / 2) + 4, `y = ${f(z.y)}`, '#8fa6d8', z.x >= 0 ? 'start' : 'end');
+  }
+  if (reps.deg || reps.rad || reps.sqrt) {          // any length rep → the r = label (with √(r²) form if ticked)
+    const rlab = reps.sqrt ? (prob ? `r = ${f(R)} = √${(R * R * 100).toFixed(0)}%` : `r = ${f(R)} = √${f(R * R)}`) : `r = ${f(R)}`;
+    s += txt(X(z.x / 2) - 15, Y(z.y / 2) - 10, rlab, reps.sqrt ? '#ffd24a' : '#7bb6ff', 'end');
+  }
+  if (reps.deg || reps.rad) {                        // any angle rep → the θ label (the arc is drawn in render)
+    const parts = []; if (reps.deg) parts.push(fdeg(deg(z))); if (reps.rad) parts.push(fpi(z));
+    const th = deg(z) * Math.PI / 180, RR = arcR(z) + 0.28;
+    s += txt(X(RR * Math.cos(th / 2)), Y(RR * Math.sin(th / 2)), `θ = ${parts.join(' = ')}`, '#d8b65a', 'start');
+  }
+  return s;
+}
+function grid() {
+  let g = '';
+  for (let i = -GMAX; i <= GMAX; i++) {
+    g += `<line x1="${X(i)}" y1="0" x2="${X(i)}" y2="460" stroke="#141d33"/><line x1="0" y1="${Y(i)}" x2="460" y2="${Y(i)}" stroke="#141d33"/>`;
+  }
+  if (PROB())                                      // probability rings: prob = r² every 10%
+    for (let q = 1; q <= 9; q++) g += `<circle cx="${CX}" cy="${CY}" r="${(Math.sqrt(q / 10) * S()).toFixed(1)}" fill="none" stroke="#16243f"/>`;
+  g += `<circle cx="${CX}" cy="${CY}" r="${S().toFixed(1)}" fill="none" stroke="#2c5588" stroke-dasharray="${PROB() ? '' : '3 4'}"/>`;   // unit circle = 100% boundary
+  g += `<line x1="0" y1="${CY}" x2="460" y2="${CY}" stroke="#3a4f7a" stroke-width="1.5"/><line x1="${CX}" y1="0" x2="${CX}" y2="460" stroke="#3a4f7a" stroke-width="1.5"/>`;
+  g += `<text x="${X(GMAX) - 5}" y="${CY - 8}" fill="#7184ad" font-size="12" text-anchor="end">real</text>`;
+  const tcol = '#9ab0d8', ticks = GMAX === 1 ? [1] : [1, GMAX];   // axis numbers: enlarged, bold, dark-haloed (via txt)
+  ticks.forEach(k => {
+    const edge = k === GMAX, im = k === 1 ? 'i' : k + 'i';
+    g += txt(X(k) - (edge ? 3 : 0), CY + 19, `+${k}`, tcol, edge ? 'end' : 'middle', 14);
+    g += txt(X(-k) + (edge ? 3 : 0), CY + 19, `−${k}`, tcol, edge ? 'start' : 'middle', 14);
+    g += txt(CX - 9, edge ? Y(k) + 13 : Y(k) + 5, `+${im}`, tcol, 'end', 14);
+    g += txt(CX - 9, edge ? Y(-k) - 6 : Y(-k) + 5, `−${im}`, tcol, 'end', 14);
+  });
+  g += txt(CX - 8, CY + 19, '0', tcol, 'end', 14);  // origin
+  return g;
+}
+const showZ2 = () => mode === 'add' || mode === 'sub' || mode === 'mul' || mode === 'div';
+const PROB = () => mode === 'point' && !!LESSONS.point[lessonIdx.point] && !!LESSONS.point[lessonIdx.point].prob;   // the √(prob) lesson
+
+function render() {
+  GMAX = PROB() ? 1 : 5;                            // the √(prob) lesson rescales to the unit disc
+  let g = grid();
+  if (mode === 'point') {
+    g += dline(z1, { x: z1.x, y: 0 }, '#3a4f7a') + dline(z1, { x: 0, y: z1.y }, '#3a4f7a');
+    if (reps.deg || reps.rad) g += arc(z1, '#caa84a');   // arc only when an angle name is shown
+    g += arrow({ x: 0, y: 0 }, z1, 'var(--z1)') + dot(z1, 'var(--z1)');
+    g += pointLabels(z1);                            // labels follow the ticked reps
+  } else {
+    let res = null, ghostEnd = null, ghostDash = '';
+    if (mode === 'add') { res = add(z1, z2); ghostEnd = res; }                       // z₂ slid onto z₁'s tip
+    if (mode === 'sub') { res = sub(z1, z2); ghostEnd = res; ghostDash = 'stroke-dasharray="5 4"';
+      g += arrow({ x: 0, y: 0 }, { x: -z2.x, y: -z2.y }, 'rgba(79,227,158,0.32)', 2, 'stroke-dasharray="3 4"'); }   // the flip −z₂
+    if (mode === 'mul') res = mul(z1, z2);
+    if (mode === 'div') res = div(z1, z2);
+    g += arrow({ x: 0, y: 0 }, z1, 'var(--z1)') + arrow({ x: 0, y: 0 }, z2, 'var(--z2)');
+    if (ghostEnd) g += arrow(z1, ghostEnd, 'rgba(79,227,158,0.6)', 2.6, ghostDash);  // ghost: green moved tail-to-tip onto blue
+    if (res) g += arrow({ x: 0, y: 0 }, res, 'var(--res)', 3.4);
+    g += dot(z1, 'var(--z1)') + dot(z2, 'var(--z2)');   // only the draggable operands get a circle; the result doesn't
+  }
+  svg.innerHTML = g;
+  panel();
+}
+
+/* ---- readouts + rule text ---- */
+function card(cls, lbl, z) { return `<div class="rdcard ${cls}"><div class="lbl">${lbl}</div><div class="val">${rect(z)}　=　${polar(z)}</div></div>`; }
+function repStr(z) {                                // join the ticked representations of one point with " = "
+  const R = r(z), prob = PROB(), p = [];
+  if (reps.rect) p.push(rect(z));
+  if (reps.deg)  p.push(R < 0.04 ? '0 ↺ —' : `${f(R)} ↺ ${fdeg(deg(z))}`);
+  if (reps.rad)  p.push(R < 0.04 ? '0 ↺ —' : `${f(R)} ↺ ${fpi(z)}`);
+  if (reps.sqrt) p.push(R < 0.04 ? '0 ↺ —' : prob ? `√${(R * R * 100).toFixed(0)}% ↺ ${fdeg(deg(z))}` : `√${f(R * R)} ↺ ${fdeg(deg(z))}`);
+  if (!p.length) p.push(rect(z));
+  return p.join('　=　');
+}
+function syncRepBoxes() { document.querySelectorAll('[data-rep]').forEach(b => (b.checked = !!reps[b.dataset.rep])); }
+function panel() {
+  const read = document.getElementById('read'), rule = document.getElementById('rule');
+  let cards, txt = '';
+  if (showZ2()) {                                   // every binary op: per-operand action + swap between
+    const mulDiv = mode === 'mul' || mode === 'div';
+    const lbl = mulDiv ? '1/z' : '↺180°', act = mulDiv ? '1/z — reciprocal (1/r, −θ)' : 'negate — turn 180°';
+    cards = `<div class="cardrow"><button class="negbtn" id="opz1" title="z₁: ${act}">${lbl}</button>${card('z1', 'z₁ (blue)', z1)}</div>`
+      + `<div class="rowbtns"><button id="swapb">⇄ swap z₁ ↔ z₂</button></div>`
+      + `<div class="cardrow"><button class="negbtn" id="opz2" title="z₂: ${act}">${lbl}</button>${card('z2', 'z₂ (green)', z2)}</div>`;
+  } else {
+    cards = `<div class="rdcard z1"><div class="lbl">z₁ (blue)</div><div class="val">${repStr(z1)}</div></div>`;
+  }
+  if (mode === 'point') {
+    const L = LESSONS.point[lessonIdx.point];
+    txt = typeof L.txt === 'function' ? L.txt(z1) : L.txt;
+  } else if (mode === 'add') {
+    const res = add(z1, z2); cards += card('res', 'z₁ + z₂', res);
+    txt = LESSONS.add[lessonIdx.add].txt;
+  } else if (mode === 'sub') {
+    const res = sub(z1, z2); cards += card('res', 'z₁ − z₂', res);
+    txt = LESSONS.sub[lessonIdx.sub].txt;
+  } else if (mode === 'mul') {
+    const res = mul(z1, z2);
+    cards += `<div class="rdcard res"><div class="lbl">z₁ × z₂</div><div class="val">${rect(res)}　=　${polar(res)}</div></div>`;
+    txt = LESSONS.mul[lessonIdx.mul].txt;
+  } else if (mode === 'div') {
+    const res = div(z1, z2);
+    cards += `<div class="rdcard res"><div class="lbl">z₁ ÷ z₂</div><div class="val">${res ? rect(res) + '　=　' + polar(res) : 'undefined (z₂ = 0)'}</div></div>`;
+    txt = LESSONS.div[lessonIdx.div].txt;
+  }
+  read.innerHTML = cards; rule.innerHTML = txt;
+  if (showZ2()) {                                  // live transforms — the answer updates itself
+    const op = (mode === 'mul' || mode === 'div') ? inv : (z => ({ x: -z.x, y: -z.y }));
+    document.getElementById('swapb').onclick = () => { const t = z1; z1 = z2; z2 = t; render(); };
+    document.getElementById('opz1').onclick = () => { z1 = op(z1); render(); };
+    document.getElementById('opz2').onclick = () => { z2 = op(z2); render(); };
+  }
+  const aside = document.getElementById('aside');
+  if (mode === 'point') {
+    aside.style.display = '';
+    if (r(z1) < 0.04) aside.innerHTML = '↺ <b>The origin has no direction.</b> Length 0 is this one point no matter the angle — <code>0 ↺ anything</code> lands here.';
+    else { const t = deg(z1); aside.innerHTML = `↺ <b>A full turn changes nothing.</b> <code>${fdeg(t)}</code> = <code>${fdeg(t + 360)}</code> = <code>${fdeg(t - 360)}</code> — three labels, one arrow.`; }
+  } else aside.style.display = 'none';
+  document.getElementById('repsRow').style.display = mode === 'point' ? '' : 'none';
+  syncRepBoxes();
+  document.getElementById('lessons').style.display = LESSONS[mode] ? '' : 'none';
+  document.getElementById('lounge').style.display = mode === 'point' ? '' : 'none';
+}
+
+/* ---- presets ---- */
+const PRE = [['1', { x: 1, y: 0 }], ['i (1↺90°)', { x: 0, y: 1 }], ['−1 (1↺180°)', { x: -1, y: 0 }], ['1↺45°', { x: Math.SQRT1_2, y: Math.SQRT1_2 }], ['1↺30°', { x: Math.cos(Math.PI/6), y: Math.sin(Math.PI/6) }]];
+function buildPresets() {
+  const tag = showZ2() ? 'set z₂:' : 'set z₁:';
+  document.getElementById('presets').innerHTML = `<span style="margin:0 4px">${tag}</span>` +
+    PRE.map((p, i) => `<button class="chip" data-pre="${i}">${p[0]}</button>`).join('');
+  document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
+    const z = PRE[+b.dataset.pre][1]; if (showZ2()) z2 = { ...z }; else z1 = { ...z }; render();
+  }));
+}
+
+/* ---- guided lessons (per mode) ---- */
+const LESSONS = {
+  point: [
+  { z: { x: 3, y: 4 }, label: '3+4i', txt: `<b>Start here — 3 + 4i.</b> Go <b>right 3</b>, then <b>up 4</b>; the dashed legs drop to the axes. The arrow that reaches the point is <b>exactly 5 long</b> — the famous <b>3-4-5 right triangle</b> — pointing <b>53.1°</b> anti-clockwise from the <code>+1</code> mark. <span class="q">One point, two names: <code>3 + 4i</code> and <code>5 ↺ 53.1°</code>.</span>` },
+  { z: { x: 1, y: 1 }, label: '1+i', txt: `<b>1 + i.</b> Equal right and up, so the arrow splits the corner <b>exactly in half — 45°</b>. But its length isn't whole: <b>√2 ≈ 1.41</b>. <span class="q">A clean angle can ride on a not-clean length.</span>` },
+  { z: { x: -1, y: 1 }, label: '−1+i', txt: `<b>−1 + i — second quadrant.</b> Left 1, up 1. Keep turning anti-clockwise, past straight up, to <b>135°</b>. Same length √2 as before — only the <b>direction</b> moved, because <b>x went negative</b>.` },
+  { z: { x: -1, y: -1 }, label: '−1−i', txt: `<b>−1 − i — third quadrant.</b> Left and down: <b>225°</b>, more than halfway around. Both coordinates negative now, still length √2. <span class="q">The angle alone tells you which quadrant you're in.</span>` },
+  { z: { x: 1, y: -1 }, label: '1−i', txt: `<b>1 − i — fourth quadrant, below the line.</b> Right 1, down 1 → <b>315°</b> going anti-clockwise. <span class="q">That's the very same arrow as turning <b>−45°</b> clockwise — <code>315°</code> and <code>−45°</code> label one point.</span>` },
+  { z: { x: 1, y: 0 }, label: '1', txt: `<b>Now the four points right on the axes — start with <code>1</code>.</b> Right 1, up nothing: it sits on the <code>+1</code> mark, length 1, angle <b>0°</b>. The everyday number 1 is a complex number too — <code>1 + 0i</code>. <span class="q">The 'do nothing' direction: multiplying by 1 leaves any arrow untouched.</span>` },
+  { z: { x: 0, y: 1 }, label: 'i', txt: `<b><code>i</code> — straight up.</b> No real part at all: <code>0 + 1i</code>, just <code>i</code>. Length 1, angle <b>90°</b>, on the <code>+i</code> mark. <span class="q">The imaginary unit — a quarter-turn from 1. Do it twice (<code>i × i</code>) and you land on <b>−1</b>: that's all <code>i² = −1</code> ever meant — two quarter-turns.</span>` },
+  { z: { x: -1, y: 0 }, label: '−1', txt: `<b><code>−1</code> — a half-turn.</b> Left 1, angle <b>180°</b>, length 1: pointing exactly backward from 1. <span class="q">It's <code>i</code> applied twice, and the quantum <b>Z</b> gate — flip the arrow end-for-end.</span>` },
+  { z: { x: 0, y: -1 }, label: '−i', txt: `<b><code>−i</code> — straight down.</b> <code>0 − 1i</code>, length 1, angle <b>270°</b> (three-quarters around) = <b>−90°</b>. <span class="q">A quarter-turn the <i>other</i> way. Four of them — or one <code>i</code> — bring you back to where you started.</span>` },
+  { z: { x: 0, y: 0 }, label: '0', txt: `<b>Zero.</b> No right, no up — <b>length 0</b>, shrunk to a dot at the centre. <span class="q">It's the one point with <b>no direction at all</b>: <code>0 ↺ anything</code> is still just zero. Every <i>other</i> point has exactly one length and one angle.</span>` },
+  { z: { x: 3, y: 4 }, label: 'r = √(r²)', reps: { rect: true, deg: true, sqrt: true },
+    txt: z => { const R = r(z), x2 = f(z.x * z.x), y2 = f(z.y * z.y), r2 = f(R * R);
+      return `<b>The number you actually measure is r².</b> Brightness, energy, probability all grow with <b>length squared</b>, not length — and Pythagoras hands r² over for free. The dashed legs are x and y, so <b>x² + y² = r²</b>: here <b>${x2} + ${y2} = ${r2}</b>. <span class="q">Because <b>r²</b> is the value that matters, it's often easier to keep it under the root and call the length <b>r = √(r²) = √${r2}</b> — the very same arrow, named by what you'd measure. (The <b>√(r²)</b> box keeps that name on.)</span>`; } },
+  { z: { x: Math.SQRT1_2 * 0.5, y: Math.SQRT1_2 * 0.5 }, label: '√(prob)', prob: true, reps: { deg: true, sqrt: true },
+    txt: z => { const R = r(z), pct = (R * R * 100).toFixed(0);
+      return `<b>Inside the unit circle, r² is a probability.</b> Every length here is ≤ 1, so <b>r² ≤ 100%</b> — read it as a percent. This arrow has r = ${f(R)}, so <b>r² = ${pct}%</b>: a ${pct}% chance to measure. <span class="q">Under the root it reads straight off — <code>√${pct}% ↺ ${fdeg(deg(z))}</code>. A <b>√(probability) carried at an angle</b> is exactly a quantum <b>amplitude</b>. The faint rings are 10% steps of r²; drag inside the disc and watch the <i>percent</i>, not the radius.</span>`; } },
+  { z: { x: 1, y: 1 }, label: 'θ° vs θπ', reps: { deg: true, rad: true },
+    txt: z => { const d = deg(z);
+      return `<b>Two ways to name the angle — you'll meet both.</b> <b>Degrees</b> cut a full turn into <b>360°</b>; <b>radians</b> cut it into <b>2π</b>, so a half-turn is <b>π</b> and a right angle is <b>½π</b>. The handy way to read radians is as a <b>fixed factor of π</b>: here <b>${fdeg(d)} = ${fpi(z)}</b> (since ${d.toFixed(0)}/180 = ${Math.round(d / 180 * 1000) / 1000}). <span class="q">Quarter-turn <code>0.25π</code>, half-turn <code>1π</code>, full turn <code>2π</code>. Same arrow either way — <code>${f(r(z))} ↺ ${fdeg(d)} = ${f(r(z))} ↺ ${fpi(z)}</code>.</span>`; } },
+  ],
+  add: [
+    { z1: { x: -3, y: 4 }, z2: { x: 2, y: -3 }, label: 'sum', txt: `<b>Adding: −3+4i + (2−3i).</b> Slide the green arrow so its tail sits on the blue tip — <b>tip-to-tail</b> — and the amber arrow reaches the answer, <b>−1 + i</b>. <span class="q">In <code>x + i y</code> it's just "add the rights, add the ups": −3+2 = −1 and 4−3 = 1. Tip-to-tail works whichever way the arrows point — here they pull partly against each other, so the sum is <b>shorter</b> than either one.</span>` },
+    { z1: { x: 3, y: 4 }, z2: { x: -3, y: -4 }, label: 'make 0', txt: `<b>What adds to make zero? 3+4i + (−3−4i).</b> <span class="q"><code>−3−4i</code> is <code>3+4i</code> spun <b>180°</b> — same length, opposite direction (the <b>↺180°</b> button on z₂ flips it and back). Laid tip-to-tail it walks straight back to the <b>origin</b>: the sum is <b>0</b>. That 180° flip <i>is</i> the number's <b>negative</b> — the one number you can add to get zero.</span>` },
+    { z1: { x: -3, y: 4 }, z2: { x: 2, y: -3 }, label: 'swap', txt: `<b>Does order matter? Press <code>swap</code>.</b> Blue and green trade places, but <span class="q">the amber answer <b>doesn't move</b>: <code>z₁ + z₂ = z₂ + z₁</code>. Tip-to-tail from either end lands on the same point — <b>addition doesn't care about order</b>.</span>` },
+  ],
+  sub: [
+    { z1: { x: -1, y: 1 }, z2: { x: 2, y: -3 }, label: 'undo', txt: `<b>Subtraction undoes addition.</b> Back in the add tab, <code>−3+4i + (2−3i) = −1+i</code>. <span class="q">Start from that sum <code>−1+i</code>, take <code>2−3i</code> straight back off — and you land right back on <b>−3+4i</b>, exactly where you began. Add an arrow, then subtract it, and you're home: <code>(a + b) − b = a</code>.</span>` },
+    { z1: { x: -1, y: 1 }, z2: { x: 2, y: -3 }, label: 'flip', txt: `<b>How? Flip, then add — <code>a − b = a + (−b)</code>.</b> <span class="q">To take away <code>2−3i</code>, <b>flip it 180°</b> to <code>−2+3i</code> (the dashed arrow — a 180° turn, what the <b>↺180°</b> button does) and lay it tip-to-tail. You reach the same point, <b>−3+4i</b>. <b>Subtracting is just adding the flip.</b></span>` },
+  ],
+  mul: [
+    { z1: { x: 1, y: 2 }, z2: { x: 2, y: 1 }, label: 'len × ang', txt: `<b>Lengths multiply, angles add.</b> Two arrows of length <b>√5 ≈ 2.24</b> — the product's length is <b>√5 × √5 = 5</b>. Their angles <b>63° + 27° = 90°</b>, so the answer points straight up: <b>5i</b>. <span class="q">That's the whole rule of <code>×</code>: stretch by the other's length, turn by the other's angle.</span>` },
+    { z1: { x: 2, y: 1 }, z2: { x: Math.SQRT1_2, y: Math.SQRT1_2 }, label: 'rotate', txt: `<b>Multiply by the unit circle = pure spin.</b> <code>z₂ = 1↺45°</code> has length <b>1</b>, so it can't stretch — it only <b>turns</b>. <code>z₁</code> keeps its length <b>√5</b> and just gains <b>45°</b>. <span class="q">A length-1 multiplier is a <b>rotation</b>. <code>1↺45°</code> is the quantum <b>T</b> gate; <code>i = 1↺90°</code> is <b>S</b>; <code>−1 = 1↺180°</code> is <b>Z</b>.</span>` },
+    { z1: { x: 1, y: 2 }, z2: { x: 2, y: 1 }, label: 'swap', txt: `<b>Does order matter? Press <code>swap</code>.</b> Blue and green trade places, but <span class="q">the answer <b>doesn't move</b>: <code>z₁ × z₂ = z₂ × z₁</code>. Lengths multiply and angles add the same either way — <b>multiplication doesn't care about order</b>, just like addition.</span>` },
+    { z1: { x: 2, y: 1 }, z2: { x: 0, y: 0 }, label: '× 0', txt: `<b>Multiply by 0 — everything collapses.</b> <code>z₂ = 0</code> has length 0, so <code>z₁ × 0</code> has length <b>r × 0 = 0</b> whatever the angle: the answer is the <b>origin</b>. <span class="q">0 is multiplication's black hole — and the one number with <b>no 1/z</b> (you can't divide by zero). Every <i>other</i> number can be inverted.</span>` },
+  ],
+  div: [
+    { z1: { x: 0, y: 5 }, z2: { x: 2, y: 1 }, label: 'undo', txt: `<b>Division undoes multiplication.</b> In the × tab, <code>(1+2i)(2+i) = 5i</code>. <span class="q">Now divide <code>5i</code> by <code>2+i</code> — you land right back on <b>1+2i</b>. Lengths <b>divide</b> (5 ÷ √5 = √5), angles <b>subtract</b> (90° − 27° = 63°). <code>(a × b) ÷ b = a</code>.</span>` },
+    { z1: { x: 0, y: 5 }, z2: { x: 2, y: 1 }, label: 'invert', txt: `<b>How? Invert, then multiply — <code>a ÷ b = a × (1/b)</code>.</b> <span class="q"><code>1/z₂</code> flips the length to <b>1/r</b> and mirrors the angle to <b>−θ</b> — press <b>1/z</b> on z₂ to see the reciprocal, and again to flip back. Dividing is just multiplying by it.</span>` },
+    { z1: { x: 0, y: 5 }, z2: { x: 2, y: 1 }, label: 'order', txt: `<b>Does order matter? Press <code>swap</code>.</b> <span class="q">Unlike multiply, the answer <b>flips to its reciprocal</b>: <code>z₂ ÷ z₁ = 1 / (z₁ ÷ z₂)</code>. <code>5i ÷ (2+i) = 1+2i</code>, but <code>(2+i) ÷ 5i = 1/(1+2i)</code>. <b>Division cares about order</b> — just as subtraction flipped the sign.</span>` },
+    { z1: { x: 2, y: 1 }, z2: { x: 0, y: 0 }, label: '÷ 0', txt: `<b>Why you can't divide by 0.</b> Division <b>undoes</b> multiplication: <code>z₁ ÷ z₂</code> asks "what times z₂ gives z₁?" <span class="q">But back in the × tab, <b>multiplying by 0 sent every arrow to the origin</b> — so "what times 0 gives <code>2+i</code>?" has <b>no answer at all</b>, and "what times 0 gives 0?" has <b>every</b> answer. The result could be <i>anywhere</i>, so <code>÷ 0</code> is left <b>undefined</b>. 0 is the one number you can't undo — the single point with no <code>1/z</code>.</span>` },
+  ],
+};
+function lessonsBar() {
+  const el = document.getElementById('lessons'), arr = LESSONS[mode];
+  if (!arr) return;
+  const cur = lessonIdx[mode];
+  el.innerHTML = `<button class="nav" id="lprev" ${cur === 0 ? 'disabled' : ''}>◀</button>` +
+    `<span class="title">Lesson <b>${cur + 1}</b>/${arr.length}</span>` +
+    arr.map((L, i) => `<button class="chip ${i === cur ? 'on' : ''}" data-ls="${i}">${L.label}</button>`).join('') +
+    `<button class="nav" id="lnext" ${cur === arr.length - 1 ? 'disabled' : ''}>▶</button>`;
+  el.querySelectorAll('[data-ls]').forEach(b => b.addEventListener('click', () => setLesson(+b.dataset.ls)));
+  document.getElementById('lprev').addEventListener('click', () => setLesson(cur - 1));
+  document.getElementById('lnext').addEventListener('click', () => setLesson(cur + 1));
+}
+function setLesson(i) {
+  const arr = LESSONS[mode]; if (!arr) return;
+  lessonIdx[mode] = Math.max(0, Math.min(arr.length - 1, i));
+  const L = arr[lessonIdx[mode]];
+  if (mode === 'point')                            // each point lesson owns its readout names (basics: x+iy & r↺θ°)
+    reps = L.reps ? { rect: false, deg: false, rad: false, sqrt: false, ...L.reps } : { rect: true, deg: true, rad: false, sqrt: false };
+  if (L.z) z1 = { ...L.z };                        // point lessons set z₁
+  if (L.z1) z1 = { ...L.z1 };                      // add lessons set both
+  if (L.z2) z2 = { ...L.z2 };
+  if (L.prob) { const rr = r(z1); if (rr > 1) z1 = { x: z1.x / rr, y: z1.y / rr }; }   // √(prob) lesson lives in the unit disc
+  lessonsBar(); render();
+}
+
+/* ---- dragging ---- */
+function toData(e) {
+  const rect = svg.getBoundingClientRect();
+  let x = ((e.clientX - rect.left) / rect.width * 460 - CX) / S();
+  let y = (CY - (e.clientY - rect.top) / rect.height * 460) / S();
+  if (PROB()) {                                    // prob lesson: stay in the unit disc; snap prob (r²)→5%, θ→5°
+    let rr = Math.hypot(x, y), th = Math.atan2(y, x);
+    if (snapRect || snapCirc) { rr = Math.sqrt(Math.min(1, Math.round(rr * rr / 0.05) * 0.05)); th = Math.round(th / D5) * D5; }
+    else if (rr > 1) rr = 1;
+    return { x: rr * Math.cos(th), y: rr * Math.sin(th) };
+  }
+  const ax = Math.round(x), ay = Math.round(y), da = Math.hypot(x - ax, y - ay);            // rectangular candidate (integer lattice)
+  const rr = Math.round(Math.hypot(x, y) / 0.25) * 0.25, th = Math.round(Math.atan2(y, x) / D5) * D5;
+  const bx = rr * Math.cos(th), by = rr * Math.sin(th), db = Math.hypot(x - bx, y - by);    // circular candidate (r→¼, θ→5°)
+  if (snapRect && snapCirc) { if (da <= 0.3 || da <= db) { x = ax; y = ay; } else { x = bx; y = by; } }   // both on: rectangular keeps a priority radius
+  else if (snapRect) { x = ax; y = ay; }
+  else if (snapCirc) { x = bx; y = by; }
+  return { x: Math.max(-GMAX, Math.min(GMAX, x)), y: Math.max(-GMAX, Math.min(GMAX, y)) };
+}
+svg.addEventListener('pointerdown', e => {
+  const p = toData(e), d1 = Math.hypot(p.x - z1.x, p.y - z1.y), d2 = showZ2() ? Math.hypot(p.x - z2.x, p.y - z2.y) : 99;
+  if (Math.min(d1, d2) > (PROB() ? 2 : 0.8)) return;   // grab the nearer tip (whole disc in prob mode)
+  drag = d2 < d1 ? 'z2' : 'z1'; e.preventDefault();
+});
+window.addEventListener('pointermove', e => { if (!drag) return; const p = toData(e); if (drag === 'z1') z1 = p; else z2 = p; render(); });
+window.addEventListener('pointerup', () => { drag = null; });
+
+document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click', () => {
+  mode = b.dataset.m; document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+  buildPresets();
+  if (LESSONS[mode]) setLesson(lessonIdx[mode]); else render();   // lesson modes load their setup
+}));
+document.getElementById('snapRect').addEventListener('change', e => { snapRect = e.target.checked; });
+document.getElementById('snapCirc').addEventListener('change', e => { snapCirc = e.target.checked; });
+document.querySelectorAll('[data-rep]').forEach(b => b.addEventListener('change', e => { reps[b.dataset.rep] = e.target.checked; render(); }));
+
+buildPresets(); lessonsBar(); render();
+</script>
+</body>
+</html>

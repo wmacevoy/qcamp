@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The state IS the table — amplitudes as arrows</title>
+<style>
+  :root{--bg:#0b1020;--panel:#121a30;--panel2:#0e1526;--ink:#e8edf7;--muted:#8a98b8;--line:#26324f;
+    --b:#54a0ff;--good:#1dd1a1;--bad:#f0707f;--accent:#ffd24a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+  .wrap{max-width:880px;margin:0 auto;padding:26px 20px 70px}
+  h1{font-size:22px;margin:0 0 4px}
+  .lede{color:#c4cfe6;max-width:680px;margin:0 0 4px}
+  .lede b{color:#fff}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 20px}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+    margin:22px 0 8px;border-bottom:1px solid var(--line);padding-bottom:5px}
+  .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  button,select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;
+    padding:7px 11px;font-size:13px;cursor:pointer;font-weight:600}
+  button:hover{border-color:#46598f;background:#18223c}
+  button.on{background:#1c2a4a;border-color:var(--b);color:#cfe2ff}
+  button.gate{min-width:38px}
+  .seg{display:inline-flex;gap:5px;margin-right:10px}
+  label.k{font-size:12px;color:var(--muted);margin:0 4px}
+  /* amplitude table */
+  table{width:100%;border-collapse:collapse;margin-top:6px}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:4px 8px;font-weight:600}
+  td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  td.ket{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;color:#cfe2ff;width:64px}
+  td.num{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;width:120px;color:#c4cfe6}
+  td.ph{width:52px}
+  .pbar{position:relative;height:14px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;overflow:hidden;min-width:120px}
+  .pbar>i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--b),#9b6cf0);width:0;transition:width .25s}
+  td.prob{width:50px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted)}
+  td.state{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;white-space:nowrap}
+  td.state .amp{color:var(--accent)}
+  td.state .ketc{color:#cfe2ff;margin-left:10px}
+  .stform{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:var(--muted);margin:2px 0 0}
+  .stform .amp{color:var(--accent)} .stform .ketc{color:#cfe2ff}
+  td:first-child{transition:border-left .12s}
+  .pairing{margin-top:12px;padding:11px 14px;border-radius:10px;border:1px solid #3a4a6a;background:var(--panel2);font-size:13px}
+  .pairing .phead{color:#c4cfe6;margin-bottom:7px;line-height:1.5}
+  .pairing .phead code{background:#0b1020;padding:1px 5px;border-radius:4px;color:#cfe2ff;font-size:12px}
+  .pairing .prow{display:flex;align-items:center;gap:4px;padding:3px 0;flex-wrap:wrap}
+  .pairing .prow.dim{opacity:.4}
+  .pairing .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;flex:none}
+  .pairing .pk{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#cfe2ff}
+  .pairing .op{color:var(--muted);margin:0 1px} .pairing .arr{color:var(--accent);margin:0 7px;font-weight:700}
+  .pairing .amt{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:var(--accent);margin-left:2px}
+  tr.flash td{animation:fl 0.7s ease}
+  @keyframes fl{0%{background:#2a2f1a}100%{background:transparent}}
+  .verdict{margin-top:12px;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);font-size:14px}
+  .verdict.sep{border-color:#1d6b45} .verdict.ent{border-color:#6b2740}
+  .verdict b{color:#fff} .verdict .good{color:var(--good)} .verdict .bad{color:var(--bad)}
+  .verdict .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+  .rlist{display:flex;gap:16px;margin-top:6px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+  .note{font-size:13px;color:#c4cfe6;line-height:1.55;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:14px}
+  .note b{color:#cfe2ff} .note code{background:#0b1020;padding:1px 5px;border-radius:4px}
+  .recipe{background:#241a3a;border-color:#6f4bb0;color:#e7d4ff}
+  /* shared progression nav */
+  .qnav{display:flex;align-items:center;gap:4px;padding:7px 14px;background:#0e1526;border-bottom:1px solid #26324f;font-size:13px;flex-wrap:wrap}
+  .qnav .brand{font-weight:700;color:#cfe2ff;margin-right:12px}
+  .qnav a{color:#8a98b8;text-decoration:none;padding:5px 10px;border-radius:7px}
+  .qnav a:hover{background:#16203a;color:#cfe2ff}
+  .qnav a.active{background:#1c2a4a;color:#cfe2ff}
+  .qnav .warn{margin-left:auto;font-size:11px;color:#8a98b8}
+</style>
+<script src="qlib.js"></script>
+</head>
+<body>
+<nav class="qnav">
+  <span class="brand">Bloch &amp; Entanglement</span>
+  <a href="index.html">Overview</a>
+  <a href="one-qubit.html">1 qubit</a>
+  <a href="two-qubit.html">2 qubits</a>
+  <a href="three-qubit.html">3 qubits</a>
+  <a href="complex.html">Complex</a>
+  <a href="amplitudes.html" class="active">Amplitudes</a>
+  <span class="warn">amplitudes — the quantum state, written out</span>
+</nav>
+<div class="wrap">
+  <h1>The state <em>is</em> the table</h1>
+  <p class="lede">No Bloch sphere here. A quantum state is literally <b>one arrow per outcome</b>.
+    We write each as <b>√(prob%) ↺ phase</b> — the same <code>√% ↺</code> arrows the
+    <a href="complex.html">Complex</a> page ends on: the length is √(probability) so the chance reads
+    right off, and the <b>↺ phase</b> turns it anti-clockwise from the <code>+1</code> axis. Gates are small local rules that mix and
+    <b>cancel</b> arrows. Entanglement is when the table refuses to split into separate qubits.</p>
+  <p class="sub">amplitudes-as-arrows mock-up · math reused from the camp's qlib engine</p>
+
+  <h2>Set up</h2>
+  <div class="row" style="margin-bottom:8px">
+    <span class="seg"><label class="k">qubits</label>
+      <button class="qn" data-n="1">1</button>
+      <button class="qn on" data-n="2">2</button>
+      <button class="qn" data-n="3">3</button>
+    </span>
+    <button id="reset">Reset |0…0⟩</button>
+    <button class="recipe" id="rBell">▶ Bell recipe (H, CNOT)</button>
+    <button class="recipe" id="rInt">▶ Interference (H, Z, H)</button>
+  </div>
+
+  <h2>Gates</h2>
+  <div class="row" style="margin-bottom:8px">
+    <span class="seg" id="tgtSeg"><label class="k">on qubit</label></span>
+    <button class="gate" data-g="H">H</button>
+    <button class="gate" data-g="X">X</button>
+    <button class="gate" data-g="Y">Y</button>
+    <button class="gate" data-g="Z">Z</button>
+    <button class="gate" data-g="S">S</button>
+    <button class="gate" data-g="T">T</button>
+  </div>
+  <div class="row" id="cnotRow">
+    <span class="seg"><label class="k">CNOT control</label><select id="ctrl"></select></span>
+    <span class="seg"><label class="k">target</label><select id="targ"></select></span>
+    <button id="doCnot">apply CNOT</button>
+  </div>
+
+  <h2>The state — every amplitude as an arrow</h2>
+  <p class="stform">|ψ⟩ = Σ &nbsp;<span class="amp">√prob% ↺ phase</span> <span class="ketc">|outcome⟩</span>&nbsp; — one term per row, the same form the Complex page ends on</p>
+  <table>
+    <thead><tr><th>arrow</th><th>state &nbsp;·&nbsp; √prob% ↺ phase × outcome</th><th>probability = length²</th><th></th></tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <div id="hview" class="pairing" style="display:none"></div>
+  <div class="verdict" id="verdict"></div>
+
+  <div class="note">
+    <b>Things to try.</b> Hit <b>Bell recipe</b>: watch two arrows appear and the table become
+    <em>un-splittable</em>. Hit <b>Interference</b> (H, Z, H on one qubit): the |0⟩ arrow grows, then
+    its two contributions point opposite and <b>cancel to zero</b> — that destructive cancellation,
+    impossible for probabilities, is the entire quantum edge. Flip <b>qubits</b> 1→2→3 and watch the
+    table <b>double</b> each time: that doubling is the exponential state space, in the flesh.
+    Finally, pick <b>on qubit</b> then <b>hover H</b>: the table colours into the <b>pairs</b> that
+    gate mixes — the same <code>(A+B, A−B)/√2</code> two-arrow move on every pair that differs only
+    in that bit, blind to all the others. That locality is why one little rule drives an exponential table.
+  </div>
+</div>
+
+<script>
+const { C, cmul, csub, cadd, cabs2, fmtC, gates, applyU, cnot, bloch, concurrence } = Q;
+const $ = id => document.getElementById(id);
+let n = 2, target = 0;
+let state = mk(2);
+let prev = null;
+let hview = null;                                   // which qubit's H pairing is being previewed (or null)
+
+function mk(nn) { const s = new Array(1 << nn).fill(0).map(() => C(0)); s[0] = C(1); return s; }
+const ket = i => '|' + i.toString(2).padStart(n, '0') + '⟩';
+
+function phasor(a, R = 24) {
+  const mag = Math.hypot(a.re, a.im), ph = Math.atan2(a.im, a.re);
+  const len = mag * (R - 4), tx = (R + len * Math.cos(ph)).toFixed(1), ty = (R - len * Math.sin(ph)).toFixed(1);
+  const hue = (((ph * 180 / Math.PI) + 360) % 360).toFixed(0);
+  const col = mag < 1e-6 ? '#2c3656' : `hsl(${hue},75%,63%)`;
+  const arrow = mag < 1e-6 ? '' :
+    `<line x1="${R}" y1="${R}" x2="${tx}" y2="${ty}" stroke="${col}" stroke-width="2.6" stroke-linecap="round"/>` +
+    `<circle cx="${tx}" cy="${ty}" r="3" fill="${col}"/>`;
+  return `<svg width="${2 * R}" height="${2 * R}" viewBox="0 0 ${2 * R} ${2 * R}">` +
+    `<circle cx="${R}" cy="${R}" r="${R - 2}" fill="#0b1020" stroke="#26324f"/>` +
+    `<line x1="2" y1="${R}" x2="${2 * R - 2}" y2="${R}" stroke="#1b2540"/>` +
+    `<line x1="${R}" y1="2" x2="${R}" y2="${2 * R - 2}" stroke="#1b2540"/>` +
+    arrow + `<circle cx="${R}" cy="${R}" r="2" fill="#8a98b8"/></svg>`;
+}
+
+function ampPolar(a) {                               // amplitude as √(prob%) ↺ phase°
+  const p = cabs2(a);
+  if (p < 1e-9) return '√0% ↺ —';                   // zero amplitude has no direction
+  const ph = ((Math.atan2(a.im, a.re) * 180 / Math.PI) % 360 + 360) % 360;
+  return `√${(p * 100).toFixed(0)}% ↺ ${ph.toFixed(1)}°`;
+}
+
+function render() {
+  let html = '';
+  for (let i = 0; i < state.length; i++) {
+    const a = state[i], p = cabs2(a);
+    const changed = prev && (Math.abs(prev[i].re - a.re) > 1e-9 || Math.abs(prev[i].im - a.im) > 1e-9);
+    html += `<tr class="${changed ? 'flash' : ''}">` +
+      `<td class="ph">${phasor(a)}</td>` +
+      `<td class="state"><span class="amp">${ampPolar(a)}</span><span class="ketc">${ket(i)}</span></td>` +
+      `<td><div class="pbar"><i style="width:${(p * 100).toFixed(1)}%"></i></div></td>` +
+      `<td class="prob">${(p * 100).toFixed(0)}%</td></tr>`;
+  }
+  $('tbody').innerHTML = html;
+
+  // entanglement / factor verdict
+  const lens = []; for (let q = 0; q < n; q++) lens.push(bloch(state, n, q).len);
+  const product = lens.every(L => L > 0.999);
+  const v = $('verdict');
+  let body = `Each qubit's "own state" has length ${lens.map(L => L.toFixed(2)).join(', ')} ` +
+    `(1.00 = it has a state of its own; <1 = it doesn't).<br>`;
+  if (n === 2) {
+    const d = csub(cmul(state[0], state[3]), cmul(state[1], state[2]));   // a00·a11 − a01·a10
+    body += `<span class="mono">a₀₀·a₁₁ − a₀₁·a₁₀ = ${fmtC(d)}</span> — this is 0 exactly when the table factors. `;
+  }
+  if (product) { v.className = 'verdict sep'; v.innerHTML = body + `<b class="good">✓ Separable</b> — this is just ${n} independent qubit${n > 1 ? 's' : ''}, no entanglement.`; }
+  else { v.className = 'verdict ent'; v.innerHTML = body + `<b class="bad">✗ Cannot factor</b> — at least one qubit has no state of its own. <b>This is entanglement</b>${n === 2 ? ` (concurrence ${concurrence(state).toFixed(2)})` : ''}.`; }
+  drawHView();
+}
+
+function commit(newState) { prev = state.map(a => C(a.re, a.im)); state = newState; render(); }
+
+/* ---- H pairing preview: H on qubit k pairs rows that differ only in bit k ---- */
+const PAIRPAL = ['#ffd24a', '#1dd1a1', '#54a0ff', '#f0707f'];
+const INV2 = 1 / Math.SQRT2;
+const scaleC = (a, s) => C(a.re * s, a.im * s);
+function hPairs(k) {
+  const v = 1 << (n - 1 - k);                       // place value of qubit k (q0 is the leftmost / MSB)
+  const pairs = [];
+  for (let i = 0; i < state.length; i++) if ((i & v) === 0) pairs.push({ top: i, bot: i | v });
+  return { v, pairs };
+}
+function drawHView() {
+  const rows = [...document.querySelectorAll('#tbody tr')];
+  rows.forEach(r => { if (r.cells[0]) r.cells[0].style.borderLeft = ''; });
+  const panel = $('hview');
+  if (hview === null || hview >= n) { panel.style.display = 'none'; return; }
+  const k = hview, { v, pairs } = hPairs(k);
+  pairs.forEach((p, idx) => {
+    const col = PAIRPAL[idx % PAIRPAL.length];
+    [p.top, p.bot].forEach(i => { if (rows[i]) rows[i].cells[0].style.borderLeft = `3px solid ${col}`; });
+  });
+  let html = `<div class="phead">H on <b>q${k}</b>: <b>${pairs.length}</b> pair${pairs.length > 1 ? 's' : ''} that differ only in bit ${k} ` +
+    `(partners ${v === 1 ? 'are neighbours' : 'sit ' + v + ' rows apart'}). Every pair gets the <b>same</b> two-arrow move — ` +
+    `<code>top ← (A+B)/√2</code>, <code>bottom ← (A−B)/√2</code> — and the other ${n - 1} bit${n - 1 === 1 ? '' : 's'} just ride along.</div>`;
+  pairs.forEach((p, idx) => {
+    const col = PAIRPAL[idx % PAIRPAL.length];
+    const A = state[p.top], B = state[p.bot];
+    const S = scaleC(cadd(A, B), INV2), D = scaleC(csub(A, B), INV2);
+    const dim = cabs2(A) < 1e-9 && cabs2(B) < 1e-9 ? ' dim' : '';
+    html += `<div class="prow${dim}"><span class="dot" style="background:${col}"></span>` +
+      `<span class="pk">${ket(p.top)}</span>${phasor(A, 15)}<span class="op">,</span>` +
+      `<span class="pk">${ket(p.bot)}</span>${phasor(B, 15)}<span class="arr">→</span>` +
+      `${phasor(S, 15)}<span class="amt">${ampPolar(S)}</span><span class="op">·</span>` +
+      `${phasor(D, 15)}<span class="amt">${ampPolar(D)}</span></div>`;
+  });
+  panel.innerHTML = html;
+  panel.style.display = '';
+}
+
+/* ---- controls ---- */
+function rebuildSelectors() {
+  const names = Array.from({ length: n }, (_, i) => i.toString(2).padStart(n, '0'));
+  $('tgtSeg').innerHTML = '<label class="k">on qubit</label>' +
+    Array.from({ length: n }, (_, i) => `<button class="tgt ${i === target ? 'on' : ''}" data-q="${i}">q${i}</button>`).join('');
+  document.querySelectorAll('.tgt').forEach(b => b.addEventListener('click', () => { target = +b.dataset.q; rebuildSelectors(); }));
+  const opt = sel => Array.from({ length: n }, (_, i) => `<option value="${i}" ${i === sel ? 'selected' : ''}>q${i}</option>`).join('');
+  $('ctrl').innerHTML = opt(0); $('targ').innerHTML = opt(n > 1 ? 1 : 0);
+  $('cnotRow').style.display = n > 1 ? 'flex' : 'none';
+}
+function setN(nn) { n = nn; target = 0; hview = null; document.querySelectorAll('.qn').forEach(b => b.classList.toggle('on', +b.dataset.n === nn)); state = mk(n); prev = null; rebuildSelectors(); render(); }
+
+document.querySelectorAll('.qn').forEach(b => b.addEventListener('click', () => setN(+b.dataset.n)));
+document.querySelectorAll('.gate').forEach(b => b.addEventListener('click', () => commit(applyU(state, n, target, gates[b.dataset.g]))));
+const hBtn = document.querySelector('.gate[data-g="H"]');
+hBtn.addEventListener('mouseenter', () => { hview = target; drawHView(); });
+hBtn.addEventListener('mouseleave', () => { hview = null; drawHView(); });
+$('doCnot').addEventListener('click', () => { const c = +$('ctrl').value, t = +$('targ').value; if (c !== t) commit(cnot(state, n, c, t)); });
+$('reset').addEventListener('click', () => { state = mk(n); prev = null; render(); });
+
+function runSteps(steps) {                       // animated recipe
+  let i = 0; (function step() { if (i >= steps.length) return; steps[i](); i++; setTimeout(step, 650); })();
+}
+$('rBell').addEventListener('click', () => { if (n < 2) setN(2); state = mk(n); prev = null; render();
+  runSteps([() => commit(applyU(state, n, 0, gates.H)), () => commit(cnot(state, n, 0, 1))]); });
+$('rInt').addEventListener('click', () => { state = mk(n); prev = null; render();
+  runSteps([() => commit(applyU(state, n, 0, gates.H)), () => commit(applyU(state, n, 0, gates.Z)), () => commit(applyU(state, n, 0, gates.H))]); });
+
+rebuildSelectors(); render();
+</script>
+</body>
+</html>
