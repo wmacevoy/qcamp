@@ -292,6 +292,32 @@
     return { mesh, geo, rad, set };
   }
 
+  // makeBlochView: the standard Bloch picture of a 1- or 2-qubit (sub)state, as one removable group.
+  //   n=1 → a single sphere; n=2 → two spheres (A,B) + a centre coupling sphere.
+  //   .set(state, totalN, [qubits]) drives the arrows (reduced Bloch vectors) and the coupling tensor.
+  // Both the 2-qubit page and the amplitudes comparison build their picture through this.
+  function makeBlochView(scene, opts = {}) {
+    const nq = opts.n || 1, r = opts.r || 1, sep = opts.sep ?? 1.85;
+    const colors = opts.colors || [0xff9f43, 0x54a0ff];
+    const tags = opts.tags || (nq === 2 ? ['A', 'B'] : ['q']);
+    const tagColors = opts.tagColors || colors.map(c => '#' + new THREE.Color(c).getHexString());
+    const group = new THREE.Group(); scene.add(group);
+    const spheres = [];
+    if (nq === 1) {
+      spheres.push(makeBlochSphere(group, { cx: 0, r, arrowColor: colors[0], tag: tags[0], tagColor: tagColors[0] }));
+    } else {
+      spheres.push(makeBlochSphere(group, { cx: -sep, r, arrowColor: colors[0], tag: tags[0], tagColor: tagColors[0], head: [0.2, 0.12] }));
+      spheres.push(makeBlochSphere(group, { cx: sep, r, arrowColor: colors[1], tag: tags[1], tagColor: tagColors[1], head: [0.2, 0.12] }));
+    }
+    const coupling = nq === 2 ? makeCouplingSphere(group, { rad: opts.couplingRad ?? 0.62 }) : null;
+    function set(state, totalN, qubits) {
+      const qs = qubits || (nq === 1 ? [0] : [0, 1]);
+      for (let i = 0; i < spheres.length; i++) spheres[i].set(bloch(state, totalN, qs[i]));
+      if (coupling) coupling.set(corrTensor(state, totalN, qs[0], qs[1]));
+    }
+    return { group, spheres, coupling, set, dispose() { scene.remove(group); } };
+  }
+
   // hover preview of a gate as a rotation: axis line + sweep arc + angle label
   function makeGatePreview(scene) {
     const pv = new THREE.Group(); pv.visible = false; scene.add(pv);
@@ -413,6 +439,6 @@
     normalize, applyU, applyU2, mcx, mcz, cnot, cz, swap, expect, bloch, density1, corrTensor, concurrence, tangle3,
     initThree, toThree, perp, V3: (x, y, z) => new THREE.Vector3(x, y, z),
     makeLabel, makeDynText, axisLine, setupScene, attachResize, startLoop,
-    makeBlochSphere, makeCouplingSphere, makeGatePreview, rotationToward, makeAnimator, makeReplay, makeLessons,
+    makeBlochSphere, makeCouplingSphere, makeBlochView, makeGatePreview, rotationToward, makeAnimator, makeReplay, makeLessons,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -270,7 +270,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 Q.initThree(THREE, OrbitControls);
 const { C, R2, gates, rotGate, pGate, uGate, rxxGate, rzzGate, axisAngle, applyU, applyU2, cnot, cz, swap, normalize,
   bloch, density1, corrTensor, concurrence, cmul, cconj, cabs2, fmtC, z, toThree, makeLabel, makeDynText, axisLine,
-  setupScene, attachResize, startLoop, makeBlochSphere, makeCouplingSphere, makeGatePreview, rotationToward, makeAnimator, makeReplay, makeLessons, V3 } = Q;
+  setupScene, attachResize, startLoop, makeBlochView, makeGatePreview, rotationToward, makeAnimator, makeReplay, makeLessons, V3 } = Q;
 const RAD = d => parseFloat(d) * Math.PI / 180;
 function gate1(name) {                            // single-qubit gate → {U, disp, tag}
   if (name === 'RX' || name === 'RY' || name === 'RZ') return { U: rotGate(name[1], RAD($('ang').value)), disp: name[0] + name[1].toLowerCase(), tag: `${name[1]}(${$('ang').value}°)` };
@@ -301,9 +301,9 @@ function classify() {
 
 /* ---- scene ---- */
 const { renderer, scene, camera, controls } = setupScene($('c'), { cameraPos: [0, 1.4, 6.4], point: 80 });
-const sphA = makeBlochSphere(scene, { cx: -1.85, arrowColor: 0xff9f43, tag: 'A', tagColor: '#ff9f43', head: [0.2, 0.12] });
-const sphB = makeBlochSphere(scene, { cx: 1.85, arrowColor: 0x54a0ff, tag: 'B', tagColor: '#54a0ff', head: [0.2, 0.12] });
-const coupling = makeCouplingSphere(scene, { rad: 0.62 });
+const view = makeBlochView(scene, { n: 2, sep: 1.85, couplingRad: 0.62,
+  colors: [0xff9f43, 0x54a0ff], tags: ['A', 'B'], tagColors: ['#ff9f43', '#54a0ff'] });
+const [sphA, sphB] = view.spheres, coupling = view.coupling;
 const AX = 0.62 * 1.4;
 scene.add(axisLine(V3(-AX, 0, 0), V3(AX, 0, 0), 0xd06a6a));
 scene.add(axisLine(V3(0, -AX, 0), V3(0, AX, 0), 0x6f7fb5));

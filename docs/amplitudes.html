@@ -18,8 +18,14 @@
   h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
     margin:22px 0 8px;border-bottom:1px solid var(--line);padding-bottom:5px}
   .rowcount{text-transform:none;letter-spacing:0;color:#cfe2ff;font-weight:700;font-size:13px;margin-left:6px}
-  #blochCompare{margin-top:8px}
-  #blochStage{position:relative;width:100%;height:240px;background:#0b1020;border:1px solid var(--line);border-radius:10px;overflow:hidden;touch-action:none}
+  .staterow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0 6px}
+  .staterow .showbloch{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);margin-left:6px;cursor:pointer}
+  .statewrap{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+  .statecol{flex:1 1 440px;min-width:0}
+  .blochcol{flex:0 0 340px}
+  .statecol>h2:first-child,.blochcol>h2:first-child{margin-top:0}
+  .measbtn:disabled,.normbtn:disabled,.measbtn:disabled:hover,.normbtn:disabled:hover{opacity:.4;cursor:default;background:var(--panel2);border-color:#26324f;color:var(--muted)}
+  #blochStage{position:relative;width:100%;height:260px;background:#0b1020;border:1px solid var(--line);border-radius:10px;overflow:hidden;touch-action:none}
   #bcanvas{display:block;width:100%;height:100%}
   #blochCompare .cap{font-size:12.5px;color:#c4cfe6;line-height:1.55;margin:8px 0 0}
   #blochCompare .cap b{color:#cfe2ff}
@@ -123,8 +129,6 @@
     <button id="reset">Reset |0…0⟩</button>
     <button class="recipe" id="rBell">▶ Bell recipe (H, CNOT)</button>
     <button class="recipe" id="rInt">▶ Interference (H, Z, H)</button>
-    <button class="measbtn" id="measure">⊙ measure</button>
-    <button class="normbtn" id="normalize">normalize</button>
   </div>
 
   <h2>Gates</h2>
@@ -143,25 +147,35 @@
     <button id="doCnot">apply CNOT</button>
   </div>
 
-  <div id="blochCompare">
-    <h2>The same state, as a Bloch sphere <span id="blochNote" class="rowcount"></span></h2>
-    <div id="blochStage"><canvas id="bcanvas"></canvas></div>
-    <p class="cap">The very same amplitudes, drawn the friendly way — each arrow is that qubit's own
-      state, <b>|0⟩</b> up, <b>|1⟩</b> down. Hit <b>Bell recipe</b> and watch both arrows shrink to the
-      centre: the spheres go blank exactly when the table below turns un-splittable. Past <b>2 qubits</b>
-      there's no honest sphere left — the table is all you've got. Drag to rotate.</p>
+  <div class="staterow">
+    <button class="measbtn" id="measure">⊙ measure</button>
+    <button class="normbtn" id="normalize">normalize</button>
+    <label class="showbloch"><input type="checkbox" id="showBloch" checked /> Bloch spheres</label>
   </div>
 
-  <h2>The state — every amplitude as an arrow <span id="rowcount" class="rowcount"></span></h2>
-  <p class="stform">|ψ⟩ = Σ &nbsp;<span class="amp">√prob% ↺ phase</span> <span class="ketc">|outcome⟩</span>&nbsp; — one term per row, the same form the Complex page ends on</p>
-  <p class="editnote">Tip: <b>drag any arrow</b> to set its amplitude — length <em>and</em> phase. Edits can push the total off 100%; hit <b>normalize</b> to make it a valid quantum state again.</p>
-  <table>
-    <thead><tr><th>arrow</th><th>state &nbsp;·&nbsp; √prob% ↺ phase × outcome</th><th>probability = length²</th><th></th></tr></thead>
-    <tbody id="tbody"></tbody>
-  </table>
+  <div class="statewrap">
+    <div class="statecol">
+      <h2>The state — every amplitude as an arrow <span id="rowcount" class="rowcount"></span></h2>
+      <p class="stform">|ψ⟩ = Σ &nbsp;<span class="amp">√prob% ↺ phase</span> <span class="ketc">|outcome⟩</span>&nbsp; — one term per row, the same form the Complex page ends on</p>
+      <p class="editnote">Tip: <b>drag any arrow</b> to set its amplitude — length <em>and</em> phase. Edits can push the total off 100%; hit <b>normalize</b> to make it a valid quantum state again.</p>
+      <table>
+        <thead><tr><th>arrow</th><th>state &nbsp;·&nbsp; √prob% ↺ phase × outcome</th><th>probability = length²</th><th></th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="hview" class="pairing" style="display:none"></div>
+      <div class="verdict" id="verdict"></div>
+    </div>
 
-  <div id="hview" class="pairing" style="display:none"></div>
-  <div class="verdict" id="verdict"></div>
+    <div id="blochCompare" class="blochcol">
+      <h2>The same state, as a Bloch sphere <span id="blochNote" class="rowcount"></span></h2>
+      <div id="blochStage"><canvas id="bcanvas"></canvas></div>
+      <p class="cap">The very same amplitudes, drawn the friendly way — each <b>arrow</b> is that qubit's
+        own state. For two qubits the centre <b>coupling sphere</b> carries their correlation: hit
+        <b>Bell recipe</b> and the arrows blank out while the coupling ball lights up — the entanglement
+        the spheres alone can't hold. Past <b>2 qubits</b> even that fails; the table is all you've got.
+        Drag to rotate.</p>
+    </div>
+  </div>
 
   <div class="note">
     <b>Things to try.</b> Hit <b>Bell recipe</b>: watch two arrows appear and the table become
@@ -185,7 +199,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 Q.initThree(THREE, OrbitControls);
 const { C, cmul, csub, cadd, cabs2, fmtC, gates, applyU, cnot, bloch, concurrence,
-  setupScene, makeBlochSphere, attachResize, startLoop } = Q;
+  setupScene, makeBlochView, attachResize, startLoop } = Q;
 const $ = id => document.getElementById(id);
 let n = 2, target = 0;
 let state = mk(2);
@@ -195,6 +209,7 @@ let hview = null;                                   // which qubit's H pairing i
 function mk(nn) { const s = new Array(1 << nn).fill(0).map(() => C(0)); s[0] = C(1); return s; }
 const ket = i => '|' + i.toString(2).padStart(n, '0') + '⟩';
 const SUP = ['', '¹', '²', '³', '⁴', '⁵', '⁶'];     // 2ⁿ row-count badge
+const NORM_EPS = 1e-9;                              // norm tolerance, scaled by 2ⁿ (the number of terms)
 
 function phasor(a, R = 24) {
   const mag = Math.hypot(a.re, a.im), ph = Math.atan2(a.im, a.re);
@@ -219,36 +234,35 @@ function ampPolar(a) {                               // amplitude as √(prob%) 
 }
 
 /* ---- Bloch-sphere comparison (only an honest picture for n ≤ 2) ---- */
-let bScene = null, bSpheres = [];
+let bScene = null, bView = null;
 function initBloch() {                               // degrade gracefully if WebGL is unavailable
   try {
-    bScene = setupScene($('bcanvas'), { cameraPos: [0, 0.5, 5.6], bg: 0x0b1020, ambient: 0.9, point: 60 });
+    bScene = setupScene($('bcanvas'), { cameraPos: [0, 0.5, 6.2], bg: 0x0b1020, ambient: 0.9, point: 60 });
     attachResize($('blochStage'), bScene.renderer, bScene.camera);
     startLoop(bScene.renderer, bScene.scene, bScene.camera, bScene.controls);
   } catch (e) { bScene = null; }
 }
-function buildBloch() {                              // (re)create the sphere(s) for the current n
-  bSpheres.forEach(sp => bScene.scene.remove(sp.group));
-  bSpheres = [];
+function buildBloch() {                              // (re)build the shared Bloch view for the current n
+  if (bView) { bView.dispose(); bView = null; }
   if (n === 1) {
-    bSpheres.push(makeBlochSphere(bScene.scene, { cx: 0, r: 1, arrowColor: 0xffd24a, tag: 'q0', tagColor: '#ffd24a' }));
+    bView = makeBlochView(bScene.scene, { n: 1, colors: [0xffd24a], tags: ['q0'] });
     bScene.camera.position.set(0, 0.4, 3.7);
   } else if (n === 2) {
-    bSpheres.push(makeBlochSphere(bScene.scene, { cx: -1.5, r: 1, arrowColor: 0xff9f43, tag: 'q0', tagColor: '#ff9f43' }));
-    bSpheres.push(makeBlochSphere(bScene.scene, { cx: 1.5, r: 1, arrowColor: 0x54a0ff, tag: 'q1', tagColor: '#9fc6ff' }));
-    bScene.camera.position.set(0, 0.5, 5.6);
+    bView = makeBlochView(bScene.scene, { n: 2, sep: 1.7, couplingRad: 0.5,
+      colors: [0xff9f43, 0x54a0ff], tags: ['q0', 'q1'], tagColors: ['#ff9f43', '#9fc6ff'] });
+    bScene.camera.position.set(0, 0.5, 6.2);
   }
   bScene.controls.target.set(0, 0, 0); bScene.controls.update();
 }
-function syncBloch() {                               // show + rebuild on a qubit-count change, hide past 2
-  const show = bScene && n <= 2;
+function syncBloch() {                               // show + rebuild on a qubit-count change, hide past 2 or when unchecked
+  const show = bScene && n <= 2 && $('showBloch').checked;
   $('blochCompare').style.display = show ? '' : 'none';
   if (show) { buildBloch(); window.dispatchEvent(new Event('resize')); }
 }
-function updateBloch() {                             // point each arrow at its reduced Bloch vector
-  if (!bScene || n > 2) return;
-  for (let q = 0; q < bSpheres.length; q++) bSpheres[q].set(bloch(state, n, q));
-  $('blochNote').textContent = n === 1 ? '1 qubit — the whole truth' : '2 qubits — goes blank when entangled';
+function updateBloch() {                             // arrows = reduced Bloch vectors; centre coupling sphere = correlations
+  if (!bScene || n > 2 || !bView) return;
+  bView.set(state, n);
+  $('blochNote').textContent = n === 1 ? '1 qubit — the whole truth' : '2 qubits — spheres blank, coupling holds it';
 }
 
 function render() {
@@ -264,6 +278,11 @@ function render() {
   }
   $('tbody').innerHTML = html;
   $('rowcount').textContent = `${n} qubit${n > 1 ? 's' : ''} → 2${SUP[n]} = ${state.length} rows`;
+
+  // normalize is for an off-norm state; measure only makes sense on a valid (Σ|amp|²=1) one
+  const sumP = state.reduce((s, a) => s + cabs2(a), 0), normd = Math.abs(sumP - 1) <= (1 << n) * NORM_EPS;
+  $('normalize').disabled = normd;
+  $('measure').disabled = !normd;
 
   // entanglement / factor verdict
   const lens = []; for (let q = 0; q < n; q++) lens.push(bloch(state, n, q).len);
@@ -383,6 +402,7 @@ function normalize() {                              // rescale so Σ|amp|² = 1 
   prev = null; render();
 }
 $('normalize').addEventListener('click', normalize);
+$('showBloch').addEventListener('change', () => { syncBloch(); updateBloch(); });
 
 initBloch(); syncBloch();
 rebuildSelectors(); render();
