@@ -80,6 +80,16 @@
   #tbody td.ph svg:active{cursor:grabbing}
   .editnote{font-size:12px;color:var(--muted);margin:4px 0 0}
   .editnote b{color:#cfe2ff}
+  /* guided lessons */
+  .lessons{margin:14px 0 16px;padding:10px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .lessons .nav{background:#1c2a4a;border:1px solid var(--line);color:#cfe2ff;border-radius:7px;padding:5px 11px;font-size:14px;cursor:pointer;font-weight:700}
+  .lessons .nav:disabled{opacity:.35;cursor:default}
+  .lessons .ltitle{font-size:13px;color:var(--muted)} .lessons .ltitle b{color:#cfe2ff}
+  .lessons .lchips{display:flex;flex-wrap:wrap;gap:5px;margin-left:auto}
+  .lchip{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:7px;padding:4px 8px;font-size:11.5px;cursor:pointer;font-weight:600}
+  .lchip:hover{border-color:#46598f;color:#cfe2ff} .lchip.on{background:#1c2a4a;border-color:var(--b);color:#cfe2ff}
+  .lessons .lbody{flex-basis:100%;font-size:13.5px;line-height:1.6;color:#dbe4f5;margin-top:2px}
+  .lessons .lbody b{color:#fff} .lessons .lbody em{color:#9fd0ff;font-style:normal} .lessons .lbody code{background:#0b1020;padding:1px 5px;border-radius:4px}
   /* shared progression nav */
   .qnav{display:flex;align-items:center;gap:4px;padding:7px 14px;background:#0e1526;border-bottom:1px solid #26324f;font-size:13px;flex-wrap:wrap}
   .qnav .brand{font-weight:700;color:#cfe2ff;margin-right:12px}
@@ -115,6 +125,14 @@
     right off, and the <b>↺ phase</b> turns it anti-clockwise from the <code>+1</code> axis. Gates are small local rules that mix and
     <b>cancel</b> arrows. Entanglement is when the table refuses to split into separate qubits.</p>
   <p class="sub">amplitudes-as-arrows mock-up · math reused from the camp's qlib engine</p>
+
+  <div id="lessons" class="lessons">
+    <button class="nav" id="lprev">◀</button>
+    <span class="ltitle" id="ltitle"></span>
+    <button class="nav" id="lnext">▶</button>
+    <span class="lchips" id="lchips"></span>
+    <div class="lbody" id="lbody"></div>
+  </div>
 
   <h2>Set up</h2>
   <div class="row" style="margin-bottom:8px">
@@ -178,19 +196,10 @@
   </div>
 
   <div class="note">
-    <b>Things to try.</b> Hit <b>Bell recipe</b>: watch two arrows appear and the table become
-    <em>un-splittable</em>. Hit <b>Interference</b> (H, Z, H on one qubit): the |0⟩ arrow grows, then
-    its two contributions point opposite and <b>cancel to zero</b> — that destructive cancellation,
-    impossible for probabilities, is the entire quantum edge. Step <b>qubits</b> from <b>1 up to 6</b>
-    and watch the table <b>double</b> every time — 2, 4, 8, 16, 32, <b>64 rows</b> at six. That doubling
-    is the exponential state space in the flesh: a real machine's few hundred qubits would need more
-    rows than there are atoms in the universe — which is exactly why no fixed picture can hold it.
-    Next, pick <b>on qubit</b> then <b>hover H</b>: the table colours into the <b>pairs</b> that
-    gate mixes — the same <code>(A+B, A−B)/√2</code> two-arrow move on every pair that differs only
-    in that bit, blind to all the others. That locality is why one little rule drives an exponential table.
-    Finally, hit <b>measure</b>: the table gambles on those probabilities and <b>collapses</b> to a single
-    outcome — amplitude <b>1</b> on the winner, 0 everywhere else (and the Bloch arrows snap to match).
-    That collapse is the one place randomness enters.
+    <b>One more to try.</b> Pick a target with <b>on qubit</b>, then <b>hover H</b>: the table colours into
+    the <b>pairs</b> that gate mixes — the same <code>(A+B, A−B)/√2</code> two-arrow move on every pair
+    that differs only in that bit, blind to all the others. That locality is why one little rule drives an
+    exponential table.
   </div>
 </div>
 
@@ -404,8 +413,47 @@ function normalize() {                              // rescale so Σ|amp|² = 1 
 $('normalize').addEventListener('click', normalize);
 $('showBloch').addEventListener('change', () => { syncBloch(); updateBloch(); });
 
-initBloch(); syncBloch();
-rebuildSelectors(); render();
+/* ---- guided lessons: each jumps the page to a state, then narrates it ---- */
+const ALESSONS = [
+  { tag: 'the table', title: 'The state is a table', n: 1, gates: [],
+    body: `A quantum state <b>is</b> this table. At <b>1 qubit</b> there are two rows — outcomes <b>|0⟩</b> and <b>|1⟩</b>. All the amplitude sits on <b>|0⟩</b> (<b>√100%</b>, pointing along <code>+1</code>); <b>|1⟩</b> is empty. Each row is one <b>amplitude = √prob ↺ phase</b>: a length you'd measure and a direction. The Bloch arrow says the same — straight up at <b>|0⟩</b>.` },
+  { tag: 'H', title: 'Superposition', n: 1, gates: [['H', 0]],
+    body: `Apply <b>H</b> to q0 and the arrow <b>splits</b>: <b>|0⟩</b> and <b>|1⟩</b> each carry <b>√50%</b>, same phase — a 50/50 superposition. On the Bloch sphere the arrow swung to the <b>equator</b> (+x), still full length: one qubit is perfectly describable either way.` },
+  { tag: 'interfere', title: 'Interference', n: 1, gates: [['H', 0], ['Z', 0], ['H', 0]],
+    body: `Now <b>H, Z, H</b>. The <b>Z</b> flips <b>|1⟩</b>'s phase to <b>180°</b> — invisible to a measurement on its own. But the second <b>H</b> makes the two paths to <b>|0⟩</b> point <b>opposite</b> and <b>cancel</b>: <b>|0⟩</b> empties and you land on <b>|1⟩</b>. Destructive cancellation — impossible for probabilities — is the whole quantum edge.` },
+  { tag: 'Bell', title: 'Entanglement', n: 2, gates: [['H', 0], ['CNOT', 0, 1]],
+    body: `Two qubits: <b>H</b> on q0, then <b>CNOT</b> q0→q1 builds the <b>Bell state</b> <code>(|00⟩+|11⟩)/√2</code> — only <b>|00⟩</b> and <b>|11⟩</b> survive, each <b>√50%</b>. Look left: both Bloch arrows <b>blank out</b> and the <b>coupling sphere</b> lights up; the verdict reads <b>cannot factor</b>. The information left the parts and lives in the <b>correlation</b> — entanglement.` },
+  { tag: 'measure', title: 'Measurement', n: 2, gates: [['H', 0], ['CNOT', 0, 1]],
+    body: `Still the Bell state — now hit <b>⊙ measure</b> above the table. It <b>gambles</b> on the probabilities and <b>collapses</b> to one outcome, <b>|00⟩</b> or <b>|11⟩</b> (50/50): amplitude <b>1</b> on the winner, 0 elsewhere, and the arrows snap to match. That collapse is the one place <b>randomness</b> enters.` },
+  { tag: 'scale', title: 'The exponential', n: 6, gates: [],
+    body: `Push to <b>6 qubits</b>: the table is <b>2⁶ = 64 rows</b>, having <b>doubled</b> at every step from 1. A few hundred qubits would need more rows than there are atoms in the universe — no sphere or picture can hold that. <b>The table is the only honest representation</b>, which is exactly why the journey ends here.` },
+  { tag: 'build', title: 'Build your own', n: 2, gates: [],
+    body: `Your turn. <b>Drag any arrow</b> in the table to set its amplitude — length <em>and</em> phase. The total drifts off 100% (watch <b>measure</b> grey out); hit <b>normalize</b> to rescale into a valid state. Try building a Bell state by hand, or a three-way superposition. The table is yours to sculpt.` },
+];
+let lesson = 0;
+function applyLesson(L) {                            // jump straight to the lesson's end state
+  setN(L.n);
+  for (const s of L.gates) state = s[0] === 'CNOT' ? cnot(state, L.n, s[1], s[2]) : applyU(state, L.n, s[1], gates[s[0]]);
+  prev = null; render();
+}
+function renderLessonBar() {
+  const L = ALESSONS[lesson];
+  $('ltitle').innerHTML = `Lesson <b>${lesson + 1}</b>/${ALESSONS.length} — <b>${L.title}</b>`;
+  $('lbody').innerHTML = L.body;
+  $('lprev').disabled = lesson === 0;
+  $('lnext').disabled = lesson === ALESSONS.length - 1;
+  $('lchips').innerHTML = ALESSONS.map((x, i) => `<button class="lchip ${i === lesson ? 'on' : ''}" data-ls="${i}">${x.tag}</button>`).join('');
+  $('lchips').querySelectorAll('[data-ls]').forEach(b => b.onclick = () => showLesson(+b.dataset.ls));
+}
+function showLesson(i) {
+  lesson = Math.max(0, Math.min(ALESSONS.length - 1, i));
+  applyLesson(ALESSONS[lesson]); renderLessonBar();
+}
+$('lprev').onclick = () => showLesson(lesson - 1);
+$('lnext').onclick = () => showLesson(lesson + 1);
+
+initBloch();
+showLesson(0);
 </script>
 </body>
 </html>
