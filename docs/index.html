@@ -20,9 +20,14 @@
   .lede{color:#c4cfe6;font-size:17px;max-width:760px;margin:0 0 8px}
   .thesis{color:var(--muted);max-width:760px;margin:0 0 30px}
   .thesis b{color:#cfe2ff}
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
-  a.card{display:block;text-decoration:none;color:inherit;background:var(--panel);
+  .cards{display:flex;flex-wrap:wrap;gap:18px;align-items:stretch;margin-bottom:8px}
+  a.card{flex:1 1 250px;text-decoration:none;color:inherit;background:var(--panel);
     border:1px solid var(--line);border-radius:14px;padding:20px;transition:.14s}
+  .upshot{background:var(--panel);border:1px solid var(--line);border-left:4px solid #6f4bb0;
+    border-radius:12px;padding:16px 22px;margin:10px 0 26px;max-width:860px}
+  .upshot p{margin:0 0 10px;color:#c4cfe6;font-size:14.5px;line-height:1.6}
+  .upshot p:last-child{margin-bottom:0}
+  .upshot b{color:#cfe2ff} .upshot em{font-style:italic;color:#e7d4ff}
   a.card:hover{border-color:#46598f;transform:translateY(-2px);background:#16203a}
   .card .n{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
   .card h2{font-size:21px;margin:4px 0 6px}
@@ -33,7 +38,7 @@
   .tag.edge{background:#33301a;color:#e3cf4f;border:1px solid #6b6320}
   .tag.fail{background:#33191f;color:#f0707f;border:1px solid #6b2740}
   .tag.found{background:#241a3a;color:#c9a6f0;border:1px solid #5a3f87}
-  .arrow{color:var(--muted);font-size:22px;align-self:center;text-align:center}
+  .arrow{flex:0 0 auto;color:var(--muted);font-size:22px;align-self:center;text-align:center}
   .foot{margin-top:34px;color:var(--muted);font-size:13px}
   .foot a{color:var(--b)}
   @media(max-width:840px){.arrow{display:none}}
@@ -51,12 +56,8 @@
 </nav>
 <div class="wrap">
   <h1>The Bloch sphere, one qubit at a time</h1>
-  <p class="lede">A camp progression — watch a beautiful picture work perfectly, then strain, then
-    break, and then get rebuilt with the math that actually scales.</p>
-  <p class="thesis">The Bloch sphere is a <b>one-qubit miracle</b>. Each qubit you add costs the
-    representation exactly one notch: at <b>1</b> it is the whole truth, at <b>2</b> it survives only
-    with a coupling sphere bolted on, and at <b>3</b> it goes blind to entanglement entirely. That
-    decline <em>is</em> the lesson.</p>
+  <p class="lede">Start with the Bloch sphere — a beautiful, honest picture of a single qubit — then
+    watch what each extra qubit costs it, and pick up the tool that doesn't break.</p>
 
   <div class="cards">
     <a class="card" href="one-qubit.html">
@@ -89,16 +90,28 @@
         The picture breaks — and we measure exactly what it can’t see.</p>
       <span class="tag fail">representation: breaks ✗</span>
     </a>
+  </div>
 
-    <div class="arrow">→</div>
+  <div class="upshot">
+    <p><b>The upshot.</b> The Bloch sphere is a <b>one-qubit miracle</b> — at <b>1</b> qubit it's the
+      whole truth, at <b>2</b> it hangs on only with a coupling sphere bolted alongside, and at
+      <b>3</b> it goes blind: it simply can't show all the interactions at once.</p>
+    <p><b>So how do you level up?</b> The first step is the basics of <b>(not-so-)complex numbers</b>.
+      They're actually pretty simple — and they <em>greatly simplify</em> not just quantum mechanics
+      but big swaths of engineering, chemistry, physics, and math. Saying <i>“I want to understand
+      quantum, but I don't want to understand complex numbers”</i> is about like saying <i>“I want
+      to do woodworking, but I don't want to learn the saw.”</i> Once the numbers click, a quantum
+      <b>state</b> is just a table of these arrows — its <b>amplitudes</b>.</p>
+  </div>
 
+  <div class="cards">
     <a class="card" href="complex.html">
       <div class="n">Page 4</div>
       <div class="viz">📐</div>
       <h2>Complex numbers</h2>
-      <p>Up the game. A complex number is just a point on a plane — <em>x + i y</em>, or
-        length-and-turn <em>r ↺ θ°</em>. Drag the arrows and watch add, multiply, even divide
-        become simple stretches and turns. This is the algebra every amplitude obeys.</p>
+      <p>A complex number is just a point on a plane — <em>x + i y</em>, or length-and-turn
+        <em>r ↺ θ°</em>. Drag the arrows and watch add, multiply, even divide become simple
+        stretches and turns — the algebra every amplitude obeys.</p>
       <span class="tag found">the algebra underneath</span>
     </a>
 
