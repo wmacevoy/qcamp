@@ -177,10 +177,11 @@
     <button class="gate" data-g="T">T</button>
   </div>
   <div class="row" id="cnotRow">
-    <span class="seg"><label class="k">CNOT control</label><select id="ctrl"></select></span>
+    <span class="seg"><label class="k">controls</label><span id="ctrlSeg"></span></span>
     <span class="seg"><label class="k">target</label><select id="targ"></select></span>
-    <button id="doCnot">apply CNOT</button>
+    <button id="doCX">apply CNOT</button>
   </div>
+  <div class="editnote" id="cxHint"><b>0</b> controls = <b>NOT</b> · <b>1</b> = <b>CNOT</b> · <b>2</b> = <b>CCNOT (Toffoli)</b> — toggle the control qubit(s), pick a target. It's one gate: a NOT that only fires when its controls are all 1.</div>
 
   <div class="staterow">
     <button class="measbtn" id="measure">⊙ measure</button>
@@ -225,10 +226,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 Q.initThree(THREE, OrbitControls);
-const { C, cmul, csub, cadd, cabs2, fmtC, gates, applyU, cnot, bloch, concurrence,
+const { C, cmul, csub, cadd, cabs2, fmtC, gates, applyU, cnot, mcx, bloch, concurrence,
   setupScene, makeBlochView, attachResize, startLoop, encodeState, decodeState } = Q;
 const $ = id => document.getElementById(id);
-let n = 2, target = 0;
+let n = 2, target = 0, ctrls = new Set();          // ctrls = control qubits for the controlled-NOT (NOT/CNOT/CCNOT)
 let state = mk(2);
 let prev = null;
 let hview = null;                                   // which qubit's H pairing is being previewed (or null)
@@ -374,17 +375,27 @@ function rebuildSelectors() {
     Array.from({ length: n }, (_, i) => `<button class="tgt ${i === target ? 'on' : ''}" data-q="${i}">q${i}</button>`).join('');
   document.querySelectorAll('.tgt').forEach(b => b.addEventListener('click', () => { target = +b.dataset.q; rebuildSelectors(); }));
   const opt = sel => Array.from({ length: n }, (_, i) => `<option value="${i}" ${i === sel ? 'selected' : ''}>q${i}</option>`).join('');
-  $('ctrl').innerHTML = opt(0); $('targ').innerHTML = opt(n > 1 ? 1 : 0);
+  const tsel = ($('targ').value !== '' && +$('targ').value < n) ? +$('targ').value : (n > 1 ? 1 : 0);
+  $('targ').innerHTML = opt(tsel);
+  $('ctrlSeg').innerHTML = Array.from({ length: n }, (_, i) =>
+    `<button class="cctrl ${ctrls.has(i) ? 'on' : ''}" data-c="${i}" ${i === tsel ? 'disabled' : ''}>q${i}</button>`).join('');
+  $('ctrlSeg').querySelectorAll('.cctrl').forEach(b => b.addEventListener('click', () => {
+    const c = +b.dataset.c; ctrls.has(c) ? ctrls.delete(c) : ctrls.add(c); rebuildSelectors();
+  }));
   $('cnotRow').style.display = n > 1 ? 'flex' : 'none';
+  $('cxHint').style.display = n > 1 ? '' : 'none';
+  const k = [...ctrls].filter(c => c !== tsel && c < n).length;
+  $('doCX').textContent = 'apply ' + (k === 0 ? 'NOT' : k === 1 ? 'CNOT' : k === 2 ? 'CCNOT' : k + '·NOT');
 }
-function setN(nn) { n = nn; target = 0; hview = null; document.querySelectorAll('.qn').forEach(b => b.classList.toggle('on', +b.dataset.n === nn)); state = mk(n); prev = null; rebuildSelectors(); syncBloch(); render(); }
+function setN(nn) { n = nn; target = 0; ctrls.clear(); hview = null; document.querySelectorAll('.qn').forEach(b => b.classList.toggle('on', +b.dataset.n === nn)); state = mk(n); prev = null; rebuildSelectors(); syncBloch(); render(); }
 
 document.querySelectorAll('.qn').forEach(b => b.addEventListener('click', () => setN(+b.dataset.n)));
 document.querySelectorAll('.gate').forEach(b => b.addEventListener('click', () => commit(applyU(state, n, target, gates[b.dataset.g]))));
 const hBtn = document.querySelector('.gate[data-g="H"]');
 hBtn.addEventListener('mouseenter', () => { hview = target; drawHView(); });
 hBtn.addEventListener('mouseleave', () => { hview = null; drawHView(); });
-$('doCnot').addEventListener('click', () => { const c = +$('ctrl').value, t = +$('targ').value; if (c !== t) commit(cnot(state, n, c, t)); });
+$('targ').addEventListener('change', rebuildSelectors);
+$('doCX').addEventListener('click', () => { const t = +$('targ').value, cs = [...ctrls].filter(c => c !== t && c < n); commit(mcx(state, n, cs, t)); });
 $('reset').addEventListener('click', () => { state = mk(n); prev = null; render(); });
 
 function runSteps(steps) {                       // animated recipe
@@ -510,7 +521,7 @@ function loadFromHash() {                            // returns true if it resto
   try {
     const st = decodeState(m[1]), nn = Math.round(Math.log2(st.length));
     if (nn >= 1 && nn <= 6 && (1 << nn) === st.length) {
-      n = nn; target = 0; hview = null;
+      n = nn; target = 0; ctrls.clear(); hview = null;
       document.querySelectorAll('.qn').forEach(b => b.classList.toggle('on', +b.dataset.n === nn));
       state = st; prev = null; rebuildSelectors(); syncBloch(); render(); renderLessonBar();
       return true;
