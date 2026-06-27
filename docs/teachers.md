@@ -8,9 +8,22 @@ below.
 
 ## Who it's for
 
-- **Prerequisites:** comfort with `√`, the Pythagorean theorem, angles, and (x, y) coordinates — roughly **Algebra II / precalculus**. No calculus, no prior quantum.
+The tool does the heavy algebra for you — you **drag and watch** — so the floor is low. The core
+experience needs only **middle-school math** (≈ grade 7–8), no calculus, and no prior quantum:
+
+- **Square roots** (and squaring) — the one idea that really matters: an *amplitude is √(probability)*, and probability is *length²*. If anything needs shoring up first, it's this.
+- **The coordinate plane**, including negatives (x right, y up).
+- **Angles in degrees** (a protractor helps). The Pythagorean theorem *explains* a length, but the pages measure it for you.
+- **Percentages**, and **doubling / powers of 2** (why n qubits → 2ⁿ rows).
+
+The deeper panel readouts (complex amplitudes, sin/cos to get x,y from r,θ, matrices, radians) reward
+**Algebra II / precalc**, but are entirely optional — you never need them to operate the tool or do the
+lessons.
+
 - **Bridges from what they know:** vectors/arrows, coin-flip probabilities, waves that add and cancel. Lean on these.
-- **Audience:** late high school and up; motivated middle-schoolers can do the 1-qubit and Complex stops.
+- **Audience:** a motivated **upper-elementary / middle-schooler** can do the 1-qubit page, the Complex "a point / add" lessons, and the Amplitudes lessons; high-schoolers push into multiply/divide, phase, and the 3-qubit material.
+
+> **Start here (no math needed):** open the [1-qubit page](one-qubit.html) and just **drag the arrow** and tap gates — there's no algebra at all yet. It's the gentlest possible on-ramp, and a great hook before any √ shows up. Square roots only enter once you reach **Complex** and **Amplitudes**.
 
 ## The path & timing
 

@@ -43,6 +43,8 @@ button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);bo
 button:hover{border-color:#46598f;background:#18223c}
 button:active{transform:translateY(1px)}
 button.gate{min-width:40px}
+button.measbtn{background:#10331f;border-color:#1d6b45;color:#7fe9c3}
+button.measbtn:hover{border-color:#1dd1a1;background:#14422a}
 
 /* readouts */
 .kv{display:flex;justify-content:space-between;font-size:13px;margin:3px 0}

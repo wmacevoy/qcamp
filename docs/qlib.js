@@ -171,6 +171,13 @@
     for (let i = 0; i < f.length; i += 2) out.push(C(f[i], f[i + 1]));
     return out;     // length is 2^n, so n = log2(out.length)
   }
+  // measurement collapse: pick one basis outcome with probability |amplitude|², amplitude 1 there
+  function measure(state) {
+    const probs = state.map(a => cabs2(a)), total = probs.reduce((s, p) => s + p, 0) || 1;
+    let r = Math.random() * total, win = state.length - 1;
+    for (let i = 0; i < state.length; i++) { r -= probs[i]; if (r <= 1e-12) { win = i; break; } }
+    return state.map((_, i) => C(i === win ? 1 : 0));
+  }
 
   /* --------------------------- formatting ---------------------------- */
   const z = x => Math.abs(x) < 1e-9 ? 0 : x;
@@ -455,7 +462,7 @@
     C, cadd, csub, cmul, cconj, cabs2, R2, z, fmtC,
     gates, rotGate, pGate, uGate, rxxGate, rzzGate, PAULI, axisAngle,
     normalize, applyU, applyU2, mcx, mcz, cnot, cz, swap, expect, bloch, density1, corrTensor, concurrence, tangle3,
-    encodeState, decodeState,
+    encodeState, decodeState, measure,
     initThree, toThree, perp, V3: (x, y, z) => new THREE.Vector3(x, y, z),
     makeLabel, makeDynText, axisLine, setupScene, attachResize, startLoop,
     makeBlochSphere, makeCouplingSphere, makeBlochView, makeGatePreview, rotationToward, makeAnimator, makeReplay, makeLessons,

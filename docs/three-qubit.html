@@ -156,6 +156,10 @@
       <b>C·Z</b>: 1 = CZ, 2 = CCZ. SWAP / Rxx / Rzz act on target + the first control.
       <span class="note">RCCX (relative-phase Toffoli) and RC3X (4 qubits) aren't shown.</span></div>
 
+    <h2>Measure</h2>
+    <div class="row"><button class="measbtn" id="measure">⊙ measure all</button></div>
+    <div class="small">Collapses to a definite <b>|ijk⟩</b> ~ its probability — every sphere snaps to a pole and τ₃ drops to 0. The hidden entanglement is gone.</div>
+
     <h2>State</h2>
     <div class="name" id="stateName">GHZ</div>
     <div class="amps" id="amps"></div>
@@ -222,7 +226,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 Q.initThree(THREE, OrbitControls);
 const { C, R2, gates, rotGate, pGate, uGate, rxxGate, rzzGate, axisAngle, applyU, applyU2, mcx, mcz, swap,
   bloch, corrTensor, tangle3, cabs2, toThree, makeLabel, axisLine, setupScene, attachResize, startLoop,
-  makeBlochSphere, makeCouplingSphere, makeGatePreview, makeAnimator, rotationToward, makeReplay, makeLessons, V3 } = Q;
+  makeBlochSphere, makeCouplingSphere, makeGatePreview, makeAnimator, rotationToward, makeReplay, makeLessons, measure, V3 } = Q;
 const $ = id => document.getElementById(id), N = 3, R3 = 1 / Math.sqrt(3), R8 = 1 / Math.sqrt(8), QN = ['A', 'B', 'C'];
 const RAD = d => parseFloat(d) * Math.PI / 180;
 let state = new Array(8).fill(0).map(() => C(0));
@@ -363,6 +367,7 @@ document.querySelectorAll('button.preset').forEach(b => b.addEventListener('clic
   replay.setBase(presets[b.dataset.preset], pName[b.dataset.preset]);
 }));
 document.querySelectorAll('button[data-tgt]').forEach(b => b.addEventListener('click', () => { target = +b.dataset.tgt; renderRoles(); }));
+$('measure').addEventListener('click', () => { const out = measure(state), i = out.findIndex(a => a.re === 1), lbl = '|' + i.toString(2).padStart(3, '0') + '⟩'; document.querySelectorAll('button.preset').forEach(x => x.classList.remove('on')); $('stateName').textContent = lbl + ' measured'; replay.setBase(out, lbl + ' measured'); });
 document.querySelectorAll('button[data-ctrl]').forEach(b => b.addEventListener('click', () => { const q = +b.dataset.ctrl; if (q === target) return; ctrls.has(q) ? ctrls.delete(q) : ctrls.add(q); renderRoles(); }));
 document.querySelectorAll('button.gate').forEach(b => {
   b.addEventListener('click', () => doSingle(b.dataset.g));

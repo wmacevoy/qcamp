@@ -151,6 +151,10 @@
     </div>
     <div class="small">Rxx/Rzz use the angle slider above — tunable entanglers.</div>
 
+    <h2>Measure</h2>
+    <div class="row"><button class="measbtn" id="measure">⊙ measure both</button></div>
+    <div class="small">Collapses to a definite <b>|ij⟩</b> ~ its probability. Both arrows snap to poles and the coupling sphere goes dark — the correlation is spent.</div>
+
     <h2>State</h2>
     <div class="name" id="stateName">|00⟩</div>
     <table class="state" id="stateTbl"></table>
@@ -274,7 +278,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 Q.initThree(THREE, OrbitControls);
 const { C, R2, gates, rotGate, pGate, uGate, rxxGate, rzzGate, axisAngle, applyU, applyU2, cnot, cz, swap, normalize,
   bloch, density1, corrTensor, concurrence, cmul, cconj, cabs2, fmtC, z, toThree, makeLabel, makeDynText, axisLine,
-  setupScene, attachResize, startLoop, makeBlochView, makeGatePreview, rotationToward, makeAnimator, makeReplay, makeLessons, V3 } = Q;
+  setupScene, attachResize, startLoop, makeBlochView, makeGatePreview, rotationToward, makeAnimator, makeReplay, makeLessons, measure, V3 } = Q;
 const RAD = d => parseFloat(d) * Math.PI / 180;
 function gate1(name) {                            // single-qubit gate → {U, disp, tag}
   if (name === 'RX' || name === 'RY' || name === 'RZ') return { U: rotGate(name[1], RAD($('ang').value)), disp: name[0] + name[1].toLowerCase(), tag: `${name[1]}(${$('ang').value}°)` };
@@ -431,6 +435,7 @@ $('rCont').addEventListener('click', () => replay.cont());
 $('log').addEventListener('click', e => { const el = e.target.closest('.step'); if (el) replay.jump(+el.dataset.i); });
 document.querySelectorAll('.cell').forEach(el => el.addEventListener('click', () => replay.setBase(presets[el.dataset.bell], plabel[el.dataset.bell])));
 document.querySelectorAll('button.preset').forEach(b => b.addEventListener('click', () => replay.setBase(presets[b.dataset.preset], plabel[b.dataset.preset])));
+$('measure').addEventListener('click', () => { const out = measure(state), i = out.findIndex(a => a.re === 1); replay.setBase(out, '|' + i.toString(2).padStart(2, '0') + '⟩ measured'); });
 
 /* ---- guided lesson: build a Bell state ---- */
 const lessons = makeLessons({

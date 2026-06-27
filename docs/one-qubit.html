@@ -91,6 +91,10 @@
       <button class="gate" data-g="U">U</button>
     </div>
 
+    <h2>Measure</h2>
+    <div class="row"><button class="measbtn" id="measure">⊙ measure (Z basis)</button></div>
+    <div class="small">Collapses to <b>|0⟩</b> or <b>|1⟩</b> — chance = the arrow's projection on the up/down axis. The arrow snaps to a pole.</div>
+
     <h2>State</h2>
     <div class="name" id="stateName">|0⟩</div>
     <table class="state" id="stateTbl"></table>
@@ -145,7 +149,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 Q.initThree(THREE, OrbitControls);
 const { C, R2, gates, rotGate, pGate, uGate, axisAngle, applyU, bloch, density1, normalize, cmul, cconj, cabs2, fmtC, z,
-  toThree, makeLabel, setupScene, attachResize, startLoop, makeBlochSphere, makeGatePreview, rotationToward, makeAnimator, makeReplay } = Q;
+  toThree, makeLabel, setupScene, attachResize, startLoop, makeBlochSphere, makeGatePreview, rotationToward, makeAnimator, makeReplay, measure } = Q;
 const RAD = d => parseFloat(d) * Math.PI / 180;
 const $ = id => document.getElementById(id);
 const N = 1;
@@ -241,6 +245,7 @@ $('rBack').addEventListener('click', () => replay.back());
 $('rFwd').addEventListener('click', () => replay.fwd());
 $('rCont').addEventListener('click', () => replay.cont());
 $('log').addEventListener('click', e => { const el = e.target.closest('.step'); if (el) replay.jump(+el.dataset.i); });
+$('measure').addEventListener('click', () => { const out = measure(state), i = out.findIndex(a => a.re === 1); replay.setBase(out, ['|0⟩', '|1⟩'][i] + ' measured'); });
 
 attachResize($('stage'), renderer, camera);
 startLoop(renderer, scene, camera, controls, now => animator.tick(now));
