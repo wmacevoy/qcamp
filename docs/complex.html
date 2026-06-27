@@ -82,6 +82,7 @@
   <a href="ai-mentor.html">AI mentor</a>
   <a href="reader.html?doc=teachers.md">Teachers</a>
   <a href="reader.html?doc=glossary.md">Glossary</a>
+  <a href="reader.html?doc=summary.md">Summary</a>
   <span class="warn">complex numbers — the algebra behind every amplitude</span>
 </nav>
 <div class="wrap">
@@ -247,6 +248,7 @@ function render() {
     if (ghostEnd) g += arrow(z1, ghostEnd, 'rgba(79,227,158,0.6)', 2.6, ghostDash);  // ghost: green moved tail-to-tip onto blue
     if (res) g += arrow({ x: 0, y: 0 }, res, 'var(--res)', 3.4);
     g += dot(z1, 'var(--z1)') + dot(z2, 'var(--z2)');   // only the draggable operands get a circle; the result doesn't
+    if (res && r(res) < 0.04) g += dot({ x: 0, y: 0 }, 'var(--res)', 6);   // a 0 result has no arrow — mark it with a yellow dot
   }
   svg.innerHTML = g;
   panel();
@@ -359,6 +361,7 @@ const LESSONS = {
   mul: [
     { z1: { x: 1, y: 2 }, z2: { x: 2, y: 1 }, label: 'len × ang', txt: `<b>Lengths multiply, angles add.</b> Two arrows of length <b>√5 ≈ 2.24</b> — the product's length is <b>√5 × √5 = 5</b>. Their angles <b>63° + 27° = 90°</b>, so the answer points straight up: <b>5i</b>. <span class="q">That's the whole rule of <code>×</code>: stretch by the other's length, turn by the other's angle.</span>` },
     { z1: { x: 2, y: 1 }, z2: { x: Math.SQRT1_2, y: Math.SQRT1_2 }, label: 'rotate', txt: `<b>Multiply by the unit circle = pure spin.</b> <code>z₂ = 1↺45°</code> has length <b>1</b>, so it can't stretch — it only <b>turns</b>. <code>z₁</code> keeps its length <b>√5</b> and just gains <b>45°</b>. <span class="q">A length-1 multiplier is a <b>rotation</b>. <code>1↺45°</code> is the quantum <b>T</b> gate; <code>i = 1↺90°</code> is <b>S</b>; <code>−1 = 1↺180°</code> is <b>Z</b>.</span>` },
+    { z1: { x: 2, y: 1 }, z2: { x: 2, y: -1 }, label: 'z × z*', txt: `<b>z × z* — a number times its conjugate.</b> The <b>conjugate</b> <code>z*</code> is z with only its <b>i-direction flipped</b> (same x, opposite y) — a mirror across the real axis, so its angle is <b>−θ</b>. Multiplying <b>adds the angles</b>, so <code>θ + (−θ) = 0</code> — they <i>always</i> cancel, landing right on the <b>real axis</b>. And both have the <b>same length r</b>, so the length is <b>r × r = r²</b>. <span class="q">The answer is always <b>r²</b>, a plain real number: here <code>(2+i)(2−i) = 5 = r²</code>. That's exactly why <b>|z|² = z·z*</b> — the recipe amplitudes use to become a probability.</span>` },
     { z1: { x: 1, y: 2 }, z2: { x: 2, y: 1 }, label: 'swap', txt: `<b>Does order matter? Press <code>swap</code>.</b> Blue and green trade places, but <span class="q">the answer <b>doesn't move</b>: <code>z₁ × z₂ = z₂ × z₁</code>. Lengths multiply and angles add the same either way — <b>multiplication doesn't care about order</b>, just like addition.</span>` },
     { z1: { x: 2, y: 1 }, z2: { x: 0, y: 0 }, label: '× 0', txt: `<b>Multiply by 0 — everything collapses.</b> <code>z₂ = 0</code> has length 0, so <code>z₁ × 0</code> has length <b>r × 0 = 0</b> whatever the angle: the answer is the <b>origin</b>. <span class="q">0 is multiplication's black hole — and the one number with <b>no 1/z</b> (you can't divide by zero). Every <i>other</i> number can be inverted.</span>` },
   ],
