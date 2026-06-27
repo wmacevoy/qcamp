@@ -15,6 +15,7 @@
   .qnav .brand{font-weight:700;color:#cfe2ff;margin-right:12px}
   .qnav a{color:#8a98b8;text-decoration:none;padding:5px 10px;border-radius:7px}
   .qnav a:hover{background:#16203a;color:#cfe2ff}
+  .qnav a.opt{opacity:.55}
   .qnav a.active{background:#1c2a4a;color:#cfe2ff}
   .wrap{max-width:1000px;margin:0 auto;padding:34px 22px 70px}
   h1{font-size:30px;margin:0 0 6px}
@@ -58,8 +59,8 @@
   <span class="brand">Bloch &amp; Entanglement</span>
   <a href="index.html" class="active">Overview</a>
   <a href="one-qubit.html">1 qubit</a>
-  <a href="two-qubit.html">2 qubits</a>
-  <a href="three-qubit.html">3 qubits</a>
+  <a href="two-qubit.html" class="opt">2 qubits</a>
+  <a href="three-qubit.html" class="opt">3 qubits</a>
   <a href="complex.html">Complex</a>
   <a href="amplitudes.html">Amplitudes</a>
   <a href="ai-mentor.html">AI mentor</a>
@@ -90,7 +91,7 @@
     <div class="arrow">→</div>
 
     <a class="card" href="two-qubit.html">
-      <div class="n">Page 2</div>
+      <div class="n">Page 2 · optional</div>
       <div class="viz">🔵🟣🔵</div>
       <h2>Two qubits</h2>
       <p>Two Bloch spheres go blank when entangled — the information moves into a central
@@ -101,7 +102,7 @@
     <div class="arrow">→</div>
 
     <a class="card" href="three-qubit.html">
-      <div class="n">Page 3</div>
+      <div class="n">Page 3 · optional</div>
       <div class="viz">🔵🔵🔵 ⚠</div>
       <h2>Three qubits</h2>
       <p>GHZ vs W. Every sphere and coupling can look empty while the state is maximally entangled.
@@ -120,6 +121,9 @@
       quantum, but I don't want to understand complex numbers”</i> is about like saying <i>“I want
       to do woodworking, but I don't want to learn the saw.”</i> Once the numbers click, a quantum
       <b>state</b> is just a table of these arrows — its <b>amplitudes</b>.</p>
+    <p><b>The main path:</b> <b>1 qubit → Complex → Amplitudes</b>. The <b>2- and 3-qubit pages are
+      optional</b> — a detour that <i>shows why</i> the sphere has to be abandoned, but you can skip
+      straight to the math.</p>
   </div>
 
   <div class="cards">

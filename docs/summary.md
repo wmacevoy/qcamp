@@ -12,15 +12,15 @@ maximally entangled GHZ leaves every sphere empty; only `τ₃` sees it) → so 
 machinery: **complex numbers** as arrows you stretch and turn → **amplitudes**, the table that
 *scales* (`√prob ↺ phase`, one arrow per outcome, doubling with every qubit).
 
-## Two routes through it
+## The path
 
-- **Full arc (best for the "aha"):** 1 qubit → **2 qubits → 3 qubits** → Complex → Amplitudes. The 2-
-  and 3-sphere pages are the *motivation* — you watch the friendly picture strain and break, which is
-  what makes you *want* amplitudes.
-- **Fast path (skip the strain):** **1 qubit → Complex → Amplitudes.** You can **skip the 2- and
-  3-qubit Bloch pages** entirely — they exist to *prove the picture fails*, but the conceptual ladder
-  (qubit → complex numbers → amplitude table) stands on its own. Take this route when short on time,
-  or when students already accept "pictures don't scale."
+**Main path: 1 qubit → Complex → Amplitudes.** That's the spine — the conceptual ladder (qubit →
+complex numbers → the amplitude table) stands on its own.
+
+**The 2- and 3-qubit Bloch pages are *optional*.** They're a motivating detour: you *watch* the
+friendly picture strain (2 qubits — arrows blank, info → coupling sphere) and break (3 qubits — GHZ
+looks empty, only `τ₃` sees it), which is what makes you *want* amplitudes. Take them for the full
+"aha"; skip them when short on time or when students already accept that pictures don't scale.
 
 ## Pages — upshot + lessons
 
