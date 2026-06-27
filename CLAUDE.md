@@ -20,9 +20,9 @@ no such harness exists in the repo. The whole site lives under `docs/`, which is
 docker-compose up      # then open http://localhost:8080/
 docker-compose down
 
-# Without Docker: open docs/index.html (or any page) directly in a browser.
-# All pages work from file:// EXCEPT notes.html, which fetch()es a local .md and
-# needs HTTP — under file:// it falls back to a raw-file link.
+# Or any static server: python3 -m http.server -d docs 8080
+# Pages must be served over HTTP: the WebGL pages import ES modules from vendor/,
+# which browsers block under file://. (Overview + Complex still open from file://.)
 ```
 
 Deploy is automatic: pushing to `main` triggers `.github/workflows/pages.yml`, which publishes `./docs`
@@ -47,9 +47,9 @@ Three interactive pages share one toolkit, so each page is just its own layout +
 - **`qlib.js` is a CLASSIC `<script src>`, not an ES module — on purpose.** Local ES-module imports are
   CORS-blocked under `file://`; a classic script loads everywhere. So `qlib.js` never `import`s anything.
 - **THREE is injected, not imported.** Each page's `<script type="module">` does
-  `import * as THREE from 'three'` (via an import-map → jsdelivr CDN) then `Q.initThree(THREE, OrbitControls)`.
-  This keeps `qlib.js` renderer-agnostic. CDN deps (Three.js `0.160.0`, marked.js) require internet; to vendor
-  locally, change the import-map / `<script>` URLs.
+  `import * as THREE from 'three'` (resolved by an import-map) then `Q.initThree(THREE, OrbitControls)`.
+  This keeps `qlib.js` renderer-agnostic. Three.js `0.160.0`, OrbitControls, and marked.js are **vendored
+  under `docs/vendor/`** (no CDN, fully offline); the import-maps and `<script src>`s point at local paths.
 
 ### Core conventions baked into the math (critical for correctness)
 

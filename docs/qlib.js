@@ -154,6 +154,24 @@
     return Math.min(1, 4 * Math.sqrt(cabs2(cadd(csub(d1, cmul(C(2), d2)), cmul(C(4), d3)))));
   }
 
+  /* ----------------- shareable state (URL hash) ---------------------- */
+  // pack a complex state vector into a compact url-safe base64 string, and back.
+  function encodeState(state) {
+    const f = new Float32Array(state.length * 2);
+    for (let i = 0; i < state.length; i++) { f[2 * i] = state[i].re; f[2 * i + 1] = state[i].im; }
+    let bin = ''; const bytes = new Uint8Array(f.buffer);
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function decodeState(s) {
+    const bin = atob(s.replace(/-/g, '+').replace(/_/g, '/'));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const f = new Float32Array(bytes.buffer), out = [];
+    for (let i = 0; i < f.length; i += 2) out.push(C(f[i], f[i + 1]));
+    return out;     // length is 2^n, so n = log2(out.length)
+  }
+
   /* --------------------------- formatting ---------------------------- */
   const z = x => Math.abs(x) < 1e-9 ? 0 : x;
   function fmtC(a) {
@@ -437,6 +455,7 @@
     C, cadd, csub, cmul, cconj, cabs2, R2, z, fmtC,
     gates, rotGate, pGate, uGate, rxxGate, rzzGate, PAULI, axisAngle,
     normalize, applyU, applyU2, mcx, mcz, cnot, cz, swap, expect, bloch, density1, corrTensor, concurrence, tangle3,
+    encodeState, decodeState,
     initThree, toThree, perp, V3: (x, y, z) => new THREE.Vector3(x, y, z),
     makeLabel, makeDynText, axisLine, setupScene, attachResize, startLoop,
     makeBlochSphere, makeCouplingSphere, makeBlochView, makeGatePreview, rotationToward, makeAnimator, makeReplay, makeLessons,

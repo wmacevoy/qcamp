@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.svg" />
 <title>The state IS the table — amplitudes as arrows</title>
 <style>
   :root{--bg:#0b1020;--panel:#121a30;--panel2:#0e1526;--ink:#e8edf7;--muted:#8a98b8;--line:#26324f;
@@ -76,6 +77,8 @@
   .measbtn:hover{border-color:#1dd1a1;background:#14422a}
   .normbtn{background:#0e1f33;border-color:#2c4a73;color:#aaccf5}
   .normbtn:hover{border-color:#54a0ff;background:#13263d}
+  .sharebtn{background:#1a1430;border-color:#5a3f87;color:#d9c2f5}
+  .sharebtn:hover{border-color:#7d5cc0;background:#241a3e}
   #tbody td.ph svg{cursor:grab;touch-action:none}
   #tbody td.ph svg:active{cursor:grabbing}
   .editnote{font-size:12px;color:var(--muted);margin:4px 0 0}
@@ -90,6 +93,13 @@
   .lchip:hover{border-color:#46598f;color:#cfe2ff} .lchip.on{background:#1c2a4a;border-color:var(--b);color:#cfe2ff}
   .lessons .lbody{flex-basis:100%;font-size:13.5px;line-height:1.6;color:#dbe4f5;margin-top:2px}
   .lessons .lbody b{color:#fff} .lessons .lbody em{color:#9fd0ff;font-style:normal} .lessons .lbody code{background:#0b1020;padding:1px 5px;border-radius:4px}
+  .lquiz{flex-basis:100%}
+  .lq-q{font-size:13px;color:#cfe2ff;font-weight:600;margin-bottom:7px}
+  .lq-opt{background:var(--panel2);border:1px solid var(--line);color:#dbe4f5;border-radius:7px;padding:6px 11px;font-size:12.5px;cursor:pointer;margin:0 6px 6px 0;font-weight:600}
+  .lq-opt:hover:not(:disabled){border-color:#46598f} .lq-opt:disabled{cursor:default}
+  .lq-opt.right{background:#10331f;border-color:#1d6b45;color:#7fe9c3} .lq-opt.wrong{background:#331920;border-color:#6b2740;color:#f0a0ac}
+  .lq-fb{font-size:12.5px;color:#dbe4f5;line-height:1.5;margin-top:3px}
+  .lq-fb .ok{color:#4fe39a} .lq-fb .no{color:#f0a0ac}
   /* shared progression nav */
   .qnav{display:flex;align-items:center;gap:4px;padding:7px 14px;background:#0e1526;border-bottom:1px solid #26324f;font-size:13px;flex-wrap:wrap}
   .qnav .brand{font-weight:700;color:#cfe2ff;margin-right:12px}
@@ -97,11 +107,12 @@
   .qnav a:hover{background:#16203a;color:#cfe2ff}
   .qnav a.active{background:#1c2a4a;color:#cfe2ff}
   .qnav .warn{margin-left:auto;font-size:11px;color:#8a98b8}
+  @media(max-width:620px){.wrap{padding:18px 14px 60px}.statecol{flex-basis:100%;overflow-x:auto}.blochcol{flex:1 1 100%}}
 </style>
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  "three": "./vendor/three.module.js",
+  "three/addons/": "./vendor/addons/"
 }}
 </script>
 <script src="qlib.js"></script>
@@ -116,6 +127,8 @@
   <a href="complex.html">Complex</a>
   <a href="amplitudes.html" class="active">Amplitudes</a>
   <a href="ai-mentor.html">AI mentor</a>
+  <a href="reader.html?doc=teachers.md">Teachers</a>
+  <a href="reader.html?doc=glossary.md">Glossary</a>
   <span class="warn">amplitudes — the quantum state, written out</span>
 </nav>
 <div class="wrap">
@@ -133,6 +146,7 @@
     <button class="nav" id="lnext">▶</button>
     <span class="lchips" id="lchips"></span>
     <div class="lbody" id="lbody"></div>
+    <div class="lquiz" id="lquiz"></div>
   </div>
 
   <h2>Set up</h2>
@@ -169,6 +183,7 @@
   <div class="staterow">
     <button class="measbtn" id="measure">⊙ measure</button>
     <button class="normbtn" id="normalize">normalize</button>
+    <button class="sharebtn" id="share" title="copy a link that reopens this exact state">🔗 share</button>
     <label class="showbloch"><input type="checkbox" id="showBloch" checked /> Bloch spheres</label>
   </div>
 
@@ -187,7 +202,7 @@
 
     <div id="blochCompare" class="blochcol">
       <h2>The same state, as a Bloch sphere <span id="blochNote" class="rowcount"></span></h2>
-      <div id="blochStage"><canvas id="bcanvas"></canvas></div>
+      <div id="blochStage"><canvas id="bcanvas" aria-label="Bloch-sphere view of the current quantum state (WebGL). Drag to rotate."></canvas></div>
       <p class="cap">The very same amplitudes, drawn the friendly way — each <b>arrow</b> is that qubit's
         own state. For two qubits the centre <b>coupling sphere</b> carries their correlation: hit
         <b>Bell recipe</b> and the arrows blank out while the coupling ball lights up — the entanglement
@@ -209,7 +224,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 Q.initThree(THREE, OrbitControls);
 const { C, cmul, csub, cadd, cabs2, fmtC, gates, applyU, cnot, bloch, concurrence,
-  setupScene, makeBlochView, attachResize, startLoop } = Q;
+  setupScene, makeBlochView, attachResize, startLoop, encodeState, decodeState } = Q;
 const $ = id => document.getElementById(id);
 let n = 2, target = 0;
 let state = mk(2);
@@ -431,6 +446,19 @@ const ALESSONS = [
   { tag: 'build', title: 'Build your own', n: 2, gates: [],
     body: `Your turn. <b>Drag any arrow</b> in the table to set its amplitude — length <em>and</em> phase. The total drifts off 100% (watch <b>measure</b> grey out); hit <b>normalize</b> to rescale into a valid state. Try building a Bell state by hand, or a three-way superposition. The table is yours to sculpt.` },
 ];
+// predict-then-reveal checks (in-page formative assessment, no external AI needed)
+const LQUIZ = {
+  'H': { q: 'After H on |0⟩, what is the chance of measuring |1⟩?', choices: ['0%', '50%', '100%'], answer: 1,
+    why: 'H splits the amplitude evenly — both outcomes are √50%. Check the table.' },
+  'interfere': { q: 'After H, Z, H — where does the qubit end up?', choices: ['|0⟩', '|1⟩', '50 / 50'], answer: 1,
+    why: 'Z flips |1⟩’s phase; the second H then makes the two |0⟩ paths cancel — leaving |1⟩.' },
+  'Bell': { q: 'In this Bell state, what is the chance of measuring |01⟩?', choices: ['0%', '25%', '50%'], answer: 0,
+    why: 'Only |00⟩ and |11⟩ carry amplitude — the qubits always agree, so |01⟩ never happens.' },
+  'measure': { q: 'Before you measure — can you predict the outcome?', choices: ['Yes, |00⟩', 'No — 50/50 random', 'Yes, |11⟩'], answer: 1,
+    why: 'Each is 50% likely; the outcome is genuinely random. Measurement is where randomness enters.' },
+  'scale': { q: 'How many rows would 10 qubits need?', choices: ['20', '100', '1024'], answer: 2,
+    why: '2¹⁰ = 1024 — the table doubles with every qubit. That exponential is the whole point.' },
+};
 let lesson = 0;
 function applyLesson(L) {                            // jump straight to the lesson's end state
   setN(L.n);
@@ -445,6 +473,19 @@ function renderLessonBar() {
   $('lnext').disabled = lesson === ALESSONS.length - 1;
   $('lchips').innerHTML = ALESSONS.map((x, i) => `<button class="lchip ${i === lesson ? 'on' : ''}" data-ls="${i}">${x.tag}</button>`).join('');
   $('lchips').querySelectorAll('[data-ls]').forEach(b => b.onclick = () => showLesson(+b.dataset.ls));
+  const qz = LQUIZ[L.tag], box = $('lquiz');               // predict-then-reveal check
+  if (!qz) { box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="lq-q">Predict: ${qz.q}</div>` +
+    qz.choices.map((c, i) => `<button class="lq-opt" data-i="${i}">${c}</button>`).join('') +
+    `<div class="lq-fb" hidden></div>`;
+  box.querySelectorAll('.lq-opt').forEach(b => b.onclick = () => {
+    const i = +b.dataset.i, ok = i === qz.answer;
+    box.querySelectorAll('.lq-opt').forEach(x => x.disabled = true);
+    b.classList.add(ok ? 'right' : 'wrong');
+    if (!ok) box.querySelector(`.lq-opt[data-i="${qz.answer}"]`).classList.add('right');
+    const fb = box.querySelector('.lq-fb'); fb.hidden = false;
+    fb.innerHTML = (ok ? '<b class="ok">✓ Right.</b> ' : '<b class="no">Not quite.</b> ') + qz.why;
+  });
 }
 function showLesson(i) {
   lesson = Math.max(0, Math.min(ALESSONS.length - 1, i));
@@ -453,8 +494,32 @@ function showLesson(i) {
 $('lprev').onclick = () => showLesson(lesson - 1);
 $('lnext').onclick = () => showLesson(lesson + 1);
 
+/* ---- shareable state: copy a link that reopens this exact table ---- */
+function share() {
+  const url = location.origin + location.pathname + '#s=' + encodeState(state);
+  history.replaceState(null, '', url);
+  const back = () => setTimeout(() => ($('share').textContent = '🔗 share'), 1600);
+  navigator.clipboard.writeText(url).then(() => { $('share').textContent = '✓ link copied'; back(); })
+    .catch(() => { $('share').textContent = 'link in address bar'; back(); });
+}
+function loadFromHash() {                            // returns true if it restored a shared state
+  const m = location.hash.match(/s=([^&]+)/);
+  if (!m) return false;
+  try {
+    const st = decodeState(m[1]), nn = Math.round(Math.log2(st.length));
+    if (nn >= 1 && nn <= 6 && (1 << nn) === st.length) {
+      n = nn; target = 0; hview = null;
+      document.querySelectorAll('.qn').forEach(b => b.classList.toggle('on', +b.dataset.n === nn));
+      state = st; prev = null; rebuildSelectors(); syncBloch(); render(); renderLessonBar();
+      return true;
+    }
+  } catch (e) { /* malformed link — fall through to the lesson */ }
+  return false;
+}
+$('share').addEventListener('click', share);
+
 initBloch();
-showLesson(0);
+if (!loadFromHash()) showLesson(0);
 </script>
 </body>
 </html>

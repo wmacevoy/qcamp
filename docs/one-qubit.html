@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.svg" />
 <title>One Qubit — the complete Bloch sphere</title>
 <link rel="stylesheet" href="q.css" />
 <style>
@@ -16,8 +17,8 @@
 </style>
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  "three": "./vendor/three.module.js",
+  "three/addons/": "./vendor/addons/"
 }}
 </script>
 <script src="qlib.js"></script>
@@ -32,11 +33,13 @@
   <a href="complex.html">Complex</a>
   <a href="amplitudes.html">Amplitudes</a>
   <a href="ai-mentor.html">AI mentor</a>
+  <a href="reader.html?doc=teachers.md">Teachers</a>
+  <a href="reader.html?doc=glossary.md">Glossary</a>
   <span class="warn">1 qubit — the Bloch sphere is the whole truth</span>
 </nav>
 <div id="app">
   <div id="stage">
-    <canvas id="c"></canvas>
+    <canvas id="c" aria-label="Interactive 3D Bloch sphere visualization (WebGL). Drag to rotate."></canvas>
     <div id="teach">Apply gates and watch the single arrow move.</div>
     <div id="hint">drag to rotate · scroll to zoom · hover a gate to preview its rotation</div>
   </div>

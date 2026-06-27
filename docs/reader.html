@@ -4,27 +4,18 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" href="favicon.svg" />
-<title>AI Mentor — learn quantum Socratically</title>
+<title>Bloch &amp; Entanglement — reference</title>
 <style>
   :root{--bg:#0b1020;--ink:#e8edf7;--muted:#8a98b8;--b:#54a0ff;--line:#26324f;--panel:#121a30;--accent:#c56cf0}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.6}
-  /* shared progression nav */
   .qnav{display:flex;align-items:center;gap:4px;padding:7px 14px;background:#0e1526;border-bottom:1px solid #26324f;font-size:13px;flex-wrap:wrap}
   .qnav .brand{font-weight:700;color:#cfe2ff;margin-right:12px}
   .qnav a{color:#8a98b8;text-decoration:none;padding:5px 10px;border-radius:7px}
   .qnav a:hover{background:#16203a;color:#cfe2ff}
   .qnav a.active{background:#1c2a4a;color:#cfe2ff}
-  .qnav .warn{margin-left:auto;font-size:11px;color:#8a98b8}
   .wrap{max-width:860px;margin:0 auto;padding:24px 22px 80px}
-  .copybar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:6px 0 22px;
-    padding:14px 16px;background:#1a1430;border:1px solid #5a3f87;border-radius:12px}
-  .copybtn{background:#2e2147;border:1px solid var(--accent);color:#e7d4ff;border-radius:9px;
-    padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;transition:.12s}
-  .copybtn:hover{background:#3a2a59;border-color:#7d5cc0}
-  .copybtn:disabled{opacity:.4;cursor:default}
-  .copybar .hint{font-size:12.5px;color:#c4cfe6}
   h1,h2,h3{line-height:1.25}
   h1{font-size:26px} h2{font-size:19px;border-bottom:1px solid var(--line);padding-bottom:6px;margin-top:32px}
   h3{font-size:15px;color:var(--b)}
@@ -34,8 +25,8 @@
   pre code{background:none;padding:0}
   blockquote{border-left:3px solid var(--accent);margin:0;padding:2px 16px;color:#dbe4f5;background:#0e1526}
   table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
-  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left} th{background:var(--panel)}
-  ul li{margin:4px 0}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top} th{background:var(--panel)}
+  ul li{margin:4px 0} dt{color:#cfe2ff;font-weight:700;margin-top:10px} dd{margin:2px 0 0;color:#c4cfe6}
   .err{background:#2a1620;border:1px solid #5a2740;border-radius:8px;padding:16px}
 </style>
 </head>
@@ -48,43 +39,25 @@
   <a href="three-qubit.html">3 qubits</a>
   <a href="complex.html">Complex</a>
   <a href="amplitudes.html">Amplitudes</a>
-  <a href="ai-mentor.html" class="active">AI mentor</a>
+  <a href="ai-mentor.html">AI mentor</a>
   <a href="reader.html?doc=teachers.md">Teachers</a>
   <a href="reader.html?doc=glossary.md">Glossary</a>
-  <span class="warn">learn it Socratically with any AI</span>
 </nav>
-<div class="wrap">
-  <div class="copybar">
-    <button id="copy" class="copybtn">📋 Copy the mentor prompt</button>
-    <span class="hint">paste it into Claude / ChatGPT / Gemini, keep the pages open, and say "I'm ready".</span>
-  </div>
-  <article id="content">Loading…</article>
-</div>
+<div class="wrap"><article id="content">Loading…</article></div>
 
 <script src="vendor/marked.min.js"></script>
 <script>
-  const MARK = '## SYSTEM PROMPT';
-  let mdText = '';
-  fetch('ai-mentor.md')
+  const doc = (new URLSearchParams(location.search).get('doc') || 'glossary.md').replace(/[^a-z0-9._-]/gi, '');
+  document.querySelectorAll('.qnav a').forEach(a => { if ((a.getAttribute('href') || '').includes('doc=' + doc)) a.classList.add('active'); });
+  fetch(doc)
     .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
-    .then(md => { mdText = md; document.getElementById('content').innerHTML = marked.parse(md); })
+    .then(md => { document.getElementById('content').innerHTML = marked.parse(md); document.title = (md.match(/^#\s*(.+)/) || [, doc])[1]; })
     .catch(() => {
-      document.getElementById('copy').disabled = true;
       document.getElementById('content').innerHTML =
-        '<div class="err"><b>Could not load the mentor text.</b><br>' +
+        '<div class="err"><b>Could not load <code>' + doc + '</code>.</b><br>' +
         'Rendering needs HTTP (the live site, or <code>docker-compose up</code>) — browsers block ' +
-        '<code>fetch()</code> of local files under <code>file://</code>.<br><br>' +
-        'Read or copy it directly: <a href="ai-mentor.md">ai-mentor.md</a></div>';
+        '<code>fetch()</code> of local files under <code>file://</code>.<br><br>Read it directly: <a href="' + doc + '">' + doc + '</a></div>';
     });
-  const btn = document.getElementById('copy');
-  btn.addEventListener('click', async () => {
-    if (!mdText) return;
-    const i = mdText.indexOf(MARK);
-    const prompt = (i >= 0 ? mdText.slice(i) : mdText).replace(/^##[^\n]*\n+/, '');   // drop the marker heading
-    const restore = () => setTimeout(() => (btn.textContent = '📋 Copy the mentor prompt'), 1800);
-    try { await navigator.clipboard.writeText(prompt); btn.textContent = '✓ Copied — paste into your AI'; restore(); }
-    catch (e) { btn.textContent = 'Select the prompt below & ⌘/Ctrl-C'; restore(); }
-  });
 </script>
 </body>
 </html>

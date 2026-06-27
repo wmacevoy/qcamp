@@ -33,11 +33,13 @@ This `docs/` folder is self-contained and is the intended publishing root.
 
 Notes:
 - `.nojekyll` is included so files are served verbatim (no Jekyll build).
-- Only requirement for visitors is internet access, since Three.js and marked.js
-  load from a CDN. To remove that dependency, vendor those two libraries into
-  this folder and update the `<script>` / import-map URLs to local paths.
+- **Runs fully offline — no internet, no CDN.** Three.js, OrbitControls, and
+  marked.js are vendored under `docs/vendor/`; pages reference them by local path.
 
 ## Run locally
+
+The pages must be **served over HTTP** (any static server works) — the WebGL pages
+import ES modules from `vendor/`, and browsers block module imports under `file://`.
 
 **With Docker (mirrors the Pages layout exactly):**
 
@@ -46,11 +48,16 @@ docker-compose up        # then open http://localhost:8080/
 docker-compose down      # stop
 ```
 
-**Without Docker:** open `docs/index.html` (or any page) directly in a browser
-(needs internet for the CDN). The overview and all three 3D pages work from
-`file://`; only the *rendered* notes page (`notes.html`) needs to be served over
-HTTP — over `file://` browsers block `fetch()` of the local `.md`, so it falls
-back to a link to the raw file.
+**Or any static server**, e.g. `python3 -m http.server -d docs 8080`. The Overview
+and Complex pages also open from a raw `file://` (no modules), but the 3D pages and
+the markdown-rendered pages (`notes`, `ai-mentor`, `reader`) need HTTP.
+
+## Beyond the core pages
+
+- **`ai-mentor.html`** — a copy-paste Socratic-tutor prompt for any AI ([`ai-mentor.md`](ai-mentor.md)).
+- **`reader.html?doc=…`** — renders [`teachers.md`](teachers.md) (teacher's guide) and [`glossary.md`](glossary.md).
+- **🔗 share** on the Complex and Amplitudes pages copies a URL hash that reopens the exact state.
+- Responsive (phones stack the panel under the canvas) and keyboard/screen-reader friendly.
 
 ## Code structure
 

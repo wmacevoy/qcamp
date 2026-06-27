@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.svg" />
 <title>Bloch Spheres &amp; Entanglement — Notes</title>
 <style>
   :root{--bg:#0b1020;--ink:#e8edf7;--muted:#8a98b8;--b:#54a0ff;--line:#26324f;--panel:#121a30}
@@ -43,7 +44,7 @@
     <article id="content">Loading notes…</article>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+  <script src="vendor/marked.min.js"></script>
   <script>
     fetch('bloch-sphere-and-entanglement.md')
       .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })

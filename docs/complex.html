@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.svg" />
 <title>Not Very Complex Numbers</title>
 <style>
   :root{--bg:#0b1020;--panel:#121a30;--panel2:#0e1526;--ink:#e8edf7;--muted:#8a98b8;--line:#26324f;
@@ -66,6 +67,7 @@
   .qnav a:hover{background:#16203a;color:#cfe2ff}
   .qnav a.active{background:#1c2a4a;color:#cfe2ff}
   .qnav .warn{margin-left:auto;font-size:11px;color:#8a98b8}
+  @media(max-width:620px){.main{gap:12px}.plane{flex:1 1 100%}.panel{min-width:0}.wrap{padding:18px 16px 60px}}
 </style>
 </head>
 <body>
@@ -78,6 +80,8 @@
   <a href="complex.html" class="active">Complex</a>
   <a href="amplitudes.html">Amplitudes</a>
   <a href="ai-mentor.html">AI mentor</a>
+  <a href="reader.html?doc=teachers.md">Teachers</a>
+  <a href="reader.html?doc=glossary.md">Glossary</a>
   <span class="warn">complex numbers — the algebra behind every amplitude</span>
 </nav>
 <div class="wrap">
@@ -99,7 +103,7 @@
   <div id="lessons" class="lessons"></div>
 
   <div class="main">
-    <div class="plane"><svg id="svg" viewBox="0 0 460 460"></svg></div>
+    <div class="plane"><svg id="svg" viewBox="0 0 460 460" role="img" aria-label="Complex plane; drag the arrow tips to set the numbers."></svg></div>
     <div class="panel">
       <div class="opts" id="repsRow" style="margin-top:0">show:
         <label><input type="checkbox" data-rep="rect" checked /> x + i y</label>
@@ -113,6 +117,7 @@
       <div class="opts">
         <span style="margin-right:1px">snap to</span><label><input type="checkbox" id="snapRect" checked /> rectangular</label><label><input type="checkbox" id="snapCirc" checked /> circular</label>
         <span id="presets"></span>
+        <button class="chip" id="cShare" title="copy a link to this point / operation">🔗 share</button>
       </div>
       <div class="hint">Tip: drag the circle at the tip — blue (and green, for two-number operations). The amber arrow is the answer.</div>
     </div>
@@ -425,7 +430,27 @@ document.getElementById('snapRect').addEventListener('change', e => { snapRect =
 document.getElementById('snapCirc').addEventListener('change', e => { snapCirc = e.target.checked; });
 document.querySelectorAll('[data-rep]').forEach(b => b.addEventListener('change', e => { reps[b.dataset.rep] = e.target.checked; render(); }));
 
-buildPresets(); lessonsBar(); render();
+/* ---- shareable point / operation via the URL hash ---- */
+function cShare() {
+  const f = v => Math.round(v * 1000) / 1000;
+  const url = `${location.origin}${location.pathname}#m=${mode}&a=${f(z1.x)},${f(z1.y)}&b=${f(z2.x)},${f(z2.y)}`;
+  history.replaceState(null, '', url);
+  const btn = document.getElementById('cShare');
+  const back = () => setTimeout(() => (btn.textContent = '🔗 share'), 1500);
+  navigator.clipboard.writeText(url).then(() => { btn.textContent = '✓ copied'; back(); }).catch(() => { btn.textContent = 'in address bar'; back(); });
+}
+function cLoadHash() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (!h.has('a')) return;
+  const pa = (h.get('a') || '').split(',').map(Number), pb = (h.get('b') || '0,0').split(',').map(Number), m = h.get('m');
+  if (pa.length === 2 && pa.every(isFinite)) z1 = { x: pa[0], y: pa[1] };
+  if (pb.length === 2 && pb.every(isFinite)) z2 = { x: pb[0], y: pb[1] };
+  if (m && ['point', 'add', 'sub', 'mul', 'div'].includes(m)) {
+    mode = m; document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x.dataset.m === m));
+  }
+}
+document.getElementById('cShare').addEventListener('click', cShare);
+buildPresets(); cLoadHash(); lessonsBar(); render();
 </script>
 </body>
 </html>

@@ -102,3 +102,13 @@ details ul{margin:8px 0;padding-left:18px} details li{margin:5px 0}
 details b{color:#cfe2ff}
 details code{background:var(--panel2);padding:1px 4px;border-radius:4px}
 details a{color:var(--b)}
+
+/* phones/tablets: stack the canvas above the panel instead of side-by-side.
+   `body #x` beats per-page `#x` overrides regardless of stylesheet order. */
+@media (max-width:760px){
+  body{height:auto;min-height:100vh}
+  body #app{flex-direction:column;overflow:visible}
+  body #stage{flex:0 0 58vh;min-height:300px}
+  body #panel{flex:1 1 auto;max-width:none;border-left:none;border-top:1px solid var(--line)}
+  .qnav{font-size:12px} .qnav .warn{flex-basis:100%;margin-left:0;order:2}
+}

@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.svg" />
 <title>Bloch Spheres &amp; Entanglement — Interactive (WebGL)</title>
 <link rel="stylesheet" href="q.css" />
 <style>
@@ -44,8 +45,8 @@
 </style>
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  "three": "./vendor/three.module.js",
+  "three/addons/": "./vendor/addons/"
 }}
 </script>
 <script src="qlib.js"></script>
@@ -60,11 +61,13 @@
   <a href="complex.html">Complex</a>
   <a href="amplitudes.html">Amplitudes</a>
   <a href="ai-mentor.html">AI mentor</a>
+  <a href="reader.html?doc=teachers.md">Teachers</a>
+  <a href="reader.html?doc=glossary.md">Glossary</a>
   <span class="warn">2 qubits — representation still complete (with the coupling sphere)</span>
 </nav>
 <div id="app">
   <div id="stage">
-    <canvas id="c"></canvas>
+    <canvas id="c" aria-label="Interactive 3D Bloch sphere visualization (WebGL). Drag to rotate."></canvas>
     <div id="teach">Apply gates and watch the arrows.</div>
     <div id="hint">drag to rotate · scroll to zoom · A (orange) &amp; B (blue) qubits · centre = coupling sphere</div>
     <div id="lesson" hidden>
