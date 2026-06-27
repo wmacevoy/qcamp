@@ -41,6 +41,9 @@
   .arrow{flex:0 0 auto;color:var(--muted);font-size:22px;align-self:center;text-align:center}
   .foot{margin-top:34px;color:var(--muted);font-size:13px}
   .foot a{color:var(--b)}
+  a.mentor{display:block;margin:28px 0 0;padding:15px 18px;background:#1a1430;border:1px solid #5a3f87;border-radius:12px;color:#e7d4ff;text-decoration:none;font-size:15px;line-height:1.5;transition:.14s}
+  a.mentor:hover{background:#221a3e;border-color:#7d5cc0;transform:translateY(-1px)}
+  a.mentor b{color:#fff}
   @media(max-width:840px){.arrow{display:none}}
 </style>
 </head>
@@ -53,6 +56,7 @@
   <a href="three-qubit.html">3 qubits</a>
   <a href="complex.html">Complex</a>
   <a href="amplitudes.html">Amplitudes</a>
+  <a href="ai-mentor.html">AI mentor</a>
 </nav>
 <div class="wrap">
   <h1>The Bloch sphere, one qubit at a time</h1>
@@ -127,6 +131,10 @@
       <span class="tag found">the picture that scales ✓</span>
     </a>
   </div>
+
+  <a class="mentor" href="ai-mentor.html">🤖 <b>Learn this with an AI mentor</b> — a Socratic guide you paste into any AI
+    (Claude, ChatGPT, Gemini). It walks you through these pages by <em>asking, not lecturing</em>, while you run the
+    experiments. →</a>
 
   <p class="foot">Background notes: <a href="notes.html">rendered</a> ·
     <a href="bloch-sphere-and-entanglement.md">raw .md</a>. Built for a quantum camp; runs entirely
